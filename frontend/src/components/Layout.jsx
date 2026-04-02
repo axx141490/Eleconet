@@ -151,7 +151,7 @@ export default function Layout() {
 
   return (
     <div className="app-layout">
-      <aside className="sidebar" style={{ position: 'relative' }}>
+      <aside className="sidebar">
         <div className="sidebar-logo">RAG 智能知识库</div>
         <nav className="sidebar-nav">
           {baseNavItems.map((item) => (
