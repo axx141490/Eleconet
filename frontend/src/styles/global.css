@@ -108,10 +108,10 @@ input:focus, textarea:focus, select:focus {
 .logout-btn:hover { background: rgba(255,255,255,0.2); }
 
 .main-content {
-  flex: 1;
   margin-left: 260px;
-  padding: 32px;
-  max-width: 1200px;
+  min-height: 100vh;
+  padding: 32px max(32px, calc((100% - 960px) / 2));
+  box-sizing: border-box;
 }
 
 /* ─── Cards ──────────────────────────────────────── */

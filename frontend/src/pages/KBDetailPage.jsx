@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { kbAPI } from '../services/api';
-import { Upload, Trash2, FileText, ArrowLeft, MessageSquare, RefreshCw } from 'lucide-react';
+import { kbAPI, shareAPI } from '../services/api';
+import { Upload, Trash2, FileText, ArrowLeft, MessageSquare, RefreshCw, Share2, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FILE_TYPE_COLORS = {
@@ -21,6 +21,7 @@ export default function KBDetailPage() {
   const [kb, setKB] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => { loadKB(); }, [id]);
 
@@ -63,6 +64,17 @@ export default function KBDetailPage() {
     } catch { toast.error('删除失败'); }
   };
 
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const res = await shareAPI.create(id);
+      const url = `${window.location.origin}/guest?token=${res.data.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success('分享链接已复制（1小时内有效）');
+    } catch { toast.error('生成分享链接失败'); }
+    finally { setSharing(false); }
+  };
+
   const formatSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -83,9 +95,14 @@ export default function KBDetailPage() {
             <p>{kb.description || '暂无描述'} · {kb.document_count} 文档 · {kb.total_chunks} 向量块</p>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate(`/chat?kb=${id}`)}>
-          <MessageSquare size={18} /> 开始问答
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" onClick={handleShare} disabled={sharing}>
+            <Share2 size={16} /> {sharing ? '生成中...' : '分享'}
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate(`/chat?kb=${id}`)}>
+            <MessageSquare size={18} /> 开始问答
+          </button>
+        </div>
       </div>
 
       {/* Upload Area */}

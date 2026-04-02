@@ -13,6 +13,10 @@ from app.api.knowledge_base import router as kb_router
 from app.api.chat import router as chat_router
 from app.api.stats import router as stats_router
 from app.api.settings import router as settings_router
+from app.api.share import router as share_router
+from app.api.admin import router as admin_router
+from app.api.guest import router as guest_router
+from app.api.payment import router as payment_router
 
 settings = get_settings()
 
@@ -53,6 +57,10 @@ app.include_router(kb_router)
 app.include_router(chat_router)
 app.include_router(stats_router)
 app.include_router(settings_router)
+app.include_router(share_router)
+app.include_router(admin_router)
+app.include_router(guest_router)
+app.include_router(payment_router)
 
 
 @app.get("/api/health")

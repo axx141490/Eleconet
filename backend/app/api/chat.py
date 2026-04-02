@@ -9,6 +9,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.tiers import get_tier_limits
 from app.models.user import User
 from app.models.knowledge_base import KnowledgeBase
 from app.models.conversation import Conversation, Message
@@ -65,6 +66,24 @@ async def chat(
         chat_history = [{"role": m.role, "content": m.content} for m in messages]
 
     if not conversation:
+        # Check conversation history limit for the tier
+        limits = get_tier_limits(current_user.tier)
+        conv_count_result = await db.execute(
+            select(Conversation).where(Conversation.user_id == current_user.id)
+        )
+        conv_count = len(conv_count_result.scalars().all())
+        if conv_count >= limits.max_conversations:
+            # Delete oldest conversation to make room
+            oldest_result = await db.execute(
+                select(Conversation)
+                .where(Conversation.user_id == current_user.id)
+                .order_by(Conversation.updated_at.asc())
+                .limit(1)
+            )
+            oldest = oldest_result.scalar_one_or_none()
+            if oldest:
+                await db.delete(oldest)
+
         conversation = Conversation(
             user_id=current_user.id,
             kb_id=request.kb_id,

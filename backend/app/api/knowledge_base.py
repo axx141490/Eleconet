@@ -13,6 +13,7 @@ from typing import List
 from app.core.database import get_db, async_session_factory
 from app.core.security import get_current_user
 from app.core.config import get_settings
+from app.core.tiers import get_tier_limits, BASIC_EXTENSIONS
 from app.models.user import User
 from app.models.knowledge_base import KnowledgeBase, Document, ProcessingStatus
 from app.parsers import ParserFactory
@@ -47,6 +48,17 @@ async def create_knowledge_base(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new knowledge base."""
+    limits = get_tier_limits(current_user.tier)
+    count_result = await db.execute(
+        select(KnowledgeBase).where(KnowledgeBase.owner_id == current_user.id)
+    )
+    existing_count = len(count_result.scalars().all())
+    if existing_count >= limits.max_knowledge_bases:
+        raise HTTPException(
+            status_code=403,
+            detail=f"已达到 {current_user.tier.upper()} 套餐知识库数量上限（{limits.max_knowledge_bases} 个）"
+        )
+
     collection_name = f"kb_{current_user.id}_{uuid.uuid4().hex[:12]}"
 
     kb = KnowledgeBase(
@@ -175,6 +187,20 @@ async def upload_documents(
     if not kb:
         raise HTTPException(status_code=404, detail="Knowledge base not found")
 
+    # Check tier limits
+    limits = get_tier_limits(current_user.tier)
+
+    # Check document count limit
+    doc_count_result = await db.execute(
+        select(Document).where(Document.kb_id == kb_id)
+    )
+    existing_docs = len(doc_count_result.scalars().all())
+    if existing_docs + len(files) > limits.max_docs_per_kb:
+        raise HTTPException(
+            status_code=403,
+            detail=f"已达到 {current_user.tier.upper()} 套餐单知识库文档数上限（{limits.max_docs_per_kb} 个）"
+        )
+
     # Create upload directory
     upload_dir = os.path.join(settings.UPLOAD_DIR, str(kb_id))
     os.makedirs(upload_dir, exist_ok=True)
@@ -189,13 +215,23 @@ async def upload_documents(
                 detail=f"Unsupported file type: {file.filename}"
             )
 
+        # Tier: check allowed file types for Free plan
+        import os as _os
+        ext = _os.path.splitext(file.filename)[1].lower()
+        if current_user.tier == "free" and ext not in BASIC_EXTENSIONS:
+            raise HTTPException(
+                status_code=403,
+                detail=f"FREE 套餐仅支持基础文件格式（TXT、PDF、Word），不支持 {ext} 文件"
+            )
+
         # Validate file size
         content = await file.read()
         file_size = len(content)
-        if file_size > settings.MAX_FILE_SIZE_MB * 1024 * 1024:
+        max_bytes = limits.max_file_size_mb * 1024 * 1024
+        if file_size > max_bytes:
             raise HTTPException(
                 status_code=400,
-                detail=f"File {file.filename} exceeds max size of {settings.MAX_FILE_SIZE_MB}MB"
+                detail=f"文件 {file.filename} 超过 {current_user.tier.upper()} 套餐大小限制（{limits.max_file_size_mb}MB）"
             )
 
         # Save file

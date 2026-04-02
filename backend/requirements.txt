@@ -37,6 +37,10 @@ langchain-openai==0.0.2
 unstructured==0.11.8
 chardet==5.2.0
 
+# Payment
+wechatpayv3==1.2.29
+python-alipay-sdk==3.3.0
+
 # Utilities
 pydantic==2.5.3
 pydantic-settings==2.1.0

@@ -3,6 +3,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from typing import Optional
+from pydantic import BaseModel
+from datetime import datetime
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, get_current_user
@@ -12,10 +15,19 @@ from app.api.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class ChangeEmailRequest(BaseModel):
+    new_email: str
+    current_password: str
+
+
 @router.post("/register", response_model=TokenResponse)
 async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     """Register a new user."""
-    # Check if username or email already exists
     existing = await db.execute(
         select(User).where((User.username == data.username) | (User.email == data.email))
     )
@@ -59,4 +71,43 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current user profile."""
+    return UserResponse.model_validate(current_user)
+
+
+@router.put("/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change current user's password."""
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="当前密码不正确")
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="新密码不能少于6位")
+    current_user.hashed_password = hash_password(data.new_password)
+    current_user.updated_at = datetime.utcnow()
+    await db.flush()
+    return {"message": "密码已修改"}
+
+
+@router.put("/change-email", response_model=UserResponse)
+async def change_email(
+    data: ChangeEmailRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change current user's email."""
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="密码不正确")
+
+    existing = await db.execute(
+        select(User).where(User.email == data.new_email, User.id != current_user.id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="该邮箱已被其他账号使用")
+
+    current_user.email = data.new_email
+    current_user.updated_at = datetime.utcnow()
+    await db.flush()
     return UserResponse.model_validate(current_user)

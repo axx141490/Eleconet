@@ -39,6 +39,8 @@ class PDFParser(BaseParser):
             import io
 
             config = load_baidu_config()
+            if not config.get("enabled", False):
+                return []
             api_key = config.get("api_key", "")
             secret_key = config.get("secret_key", "")
             if not api_key or not secret_key:

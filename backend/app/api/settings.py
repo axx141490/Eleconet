@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
 from app.models.user import User
 from app.services.llm_provider import (
     load_model_config, save_model_config, PROVIDER_PRESETS
@@ -45,7 +45,7 @@ async def get_model_config(current_user: User = Depends(get_current_user)):
 @router.put("/model")
 async def update_model_config(
     data: ModelConfig,
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     current = load_model_config()
 
@@ -81,6 +81,7 @@ async def get_providers(current_user: User = Depends(get_current_user)):
 class BaiduOCRConfig(BaseModel):
     api_key: Optional[str] = ""
     secret_key: Optional[str] = ""
+    enabled: bool = False
 
 
 @router.get("/baidu-ocr")
@@ -89,14 +90,14 @@ async def get_baidu_ocr_config(current_user: User = Depends(get_current_user)):
     return {
         "api_key": _mask_key(config.get("api_key", "")),
         "secret_key": _mask_key(config.get("secret_key", "")),
-        "enabled": bool(config.get("api_key") and config.get("secret_key")),
+        "enabled": config.get("enabled", False),
     }
 
 
 @router.put("/baidu-ocr")
 async def update_baidu_ocr_config(
     data: BaiduOCRConfig,
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     current = load_baidu_config()
 
@@ -108,5 +109,6 @@ async def update_baidu_ocr_config(
     save_baidu_config({
         "api_key": merge_key(data.api_key or "", current.get("api_key", "")),
         "secret_key": merge_key(data.secret_key or "", current.get("secret_key", "")),
+        "enabled": data.enabled,
     })
     return {"message": "百度 OCR 配置已保存"}

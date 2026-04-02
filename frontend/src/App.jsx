@@ -9,6 +9,11 @@ import KBDetailPage from './pages/KBDetailPage';
 import ChatPage from './pages/ChatPage';
 import ConversationsPage from './pages/ConversationsPage';
 import SettingsPage from './pages/SettingsPage';
+import GuestChatPage from './pages/GuestChatPage';
+import AdminPage from './pages/AdminPage';
+import PricingPage from './pages/PricingPage';
+import PaymentPage from './pages/PaymentPage';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -21,6 +26,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/guest" element={<GuestChatPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="knowledge-base" element={<KnowledgeBasePage />} />
@@ -29,6 +36,9 @@ function AppRoutes() {
         <Route path="chat/:conversationId" element={<ChatPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="admin" element={<AdminPage />} />
+        <Route path="payment" element={<PaymentPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
     </Routes>
   );

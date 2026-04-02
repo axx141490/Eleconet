@@ -17,7 +17,7 @@ def load_baidu_config() -> dict:
                 return json.load(f)
         except Exception:
             pass
-    return {"api_key": "", "secret_key": ""}
+    return {"api_key": "", "secret_key": "", "enabled": False}
 
 
 def save_baidu_config(config: dict):

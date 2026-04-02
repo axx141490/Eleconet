@@ -23,6 +23,9 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_admin: bool
+    role: str = "user"
+    tier: str = "free"
+    tier_expires_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:

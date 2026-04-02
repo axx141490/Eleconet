@@ -39,6 +39,8 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
+  changePassword: (data) => api.put('/auth/change-password', data),
+  changeEmail: (data) => api.put('/auth/change-email', data),
 };
 
 // ─── Knowledge Base ─────────────────────────────────
@@ -73,6 +75,27 @@ export const statsAPI = {
   get: () => api.get('/stats/'),
 };
 
+// ─── Share ──────────────────────────────────────────
+export const shareAPI = {
+  create: (kbId) => api.post(`/share/${kbId}`),
+  list: (kbId) => api.get(`/share/${kbId}`),
+  revoke: (linkId) => api.delete(`/share/${linkId}`),
+  verify: (token) => api.get(`/share/verify/${token}`),
+};
+
+// ─── Admin ──────────────────────────────────────────
+export const adminAPI = {
+  listUsers: () => api.get('/admin/users'),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+};
+
+// ─── Guest ──────────────────────────────────────────
+export const guestAPI = {
+  getKB: (token) => api.get(`/guest/kb?token=${token}`),
+  chat: (data) => api.post('/guest/chat', data),
+};
+
 // ─── Settings ───────────────────────────────────────
 export const settingsAPI = {
   getModel: () => api.get('/settings/model'),
@@ -80,6 +103,16 @@ export const settingsAPI = {
   getProviders: () => api.get('/settings/providers'),
   getBaiduOCR: () => api.get('/settings/baidu-ocr'),
   updateBaiduOCR: (data) => api.put('/settings/baidu-ocr', data),
+};
+
+// ─── Payment ────────────────────────────────────────
+export const paymentAPI = {
+  getPlans: () => api.get('/payment/plans'),
+  createOrder: (data) => api.post('/payment/create-order', data),
+  getOrder: (orderNo) => api.get(`/payment/order/${orderNo}`),
+  simulatePay: (orderNo) => api.post(`/payment/simulate-pay/${orderNo}`),
+  getConfig: () => api.get('/payment/config'),
+  updateConfig: (data) => api.put('/payment/config', data),
 };
 
 // ─── Misc ───────────────────────────────────────────
