@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { settingsAPI } from '../services/api';
-import { Settings, Save, RefreshCw } from 'lucide-react';
+import { Save, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PROVIDERS = [
@@ -98,6 +98,61 @@ function ProviderSection({ title, value, onChange, isEmbedding }) {
   );
 }
 
+const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 14, boxSizing: 'border-box' };
+
+function BaiduOCRSection() {
+  const [cfg, setCfg] = useState({ api_key: '', secret_key: '' });
+  const [enabled, setEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    settingsAPI.getBaiduOCR().then((res) => {
+      setCfg({ api_key: res.data.api_key, secret_key: res.data.secret_key });
+      setEnabled(res.data.enabled);
+    }).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await settingsAPI.updateBaiduOCR(cfg);
+      toast.success('百度 OCR 配置已保存');
+      setEnabled(true);
+    } catch { toast.error('保存失败'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 16, margin: 0 }}>百度 OCR（扫描版 PDF）</h3>
+        <span style={{ fontSize: 12, padding: '2px 10px', borderRadius: 12, background: enabled ? '#dcfce7' : '#f3f4f6', color: enabled ? '#166534' : '#6b7280' }}>
+          {enabled ? '已启用' : '未配置'}
+        </span>
+      </div>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+        配置后，扫描版 PDF 将优先使用百度 OCR 识别，准确率高于本地 Tesseract。
+      </p>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)' }}>API Key</label>
+          <input type="password" placeholder="输入百度 OCR API Key" value={cfg.api_key}
+            onChange={(e) => setCfg({ ...cfg, api_key: e.target.value })} style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)' }}>Secret Key</label>
+          <input type="password" placeholder="输入百度 OCR Secret Key" value={cfg.secret_key}
+            onChange={(e) => setCfg({ ...cfg, secret_key: e.target.value })} style={inputStyle} />
+        </div>
+      </div>
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ marginTop: 16 }}>
+        {saving ? <RefreshCw size={14} /> : <Save size={14} />}
+        {saving ? '保存中...' : '保存'}
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [llm, setLlm] = useState({ provider: 'openai', api_key: '', base_url: '', model: 'gpt-4o-mini' });
   const [embedding, setEmbedding] = useState({ provider: 'openai', api_key: '', base_url: '', model: 'text-embedding-3-small' });
@@ -137,7 +192,7 @@ export default function SettingsPage() {
       <div className="page-header">
         <div>
           <h1>模型配置</h1>
-          <p>配置对话和向量化使用的 AI 模型服务</p>
+          <p>配置对话、向量化和 OCR 使用的 AI 服务</p>
         </div>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
           {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />}
@@ -146,19 +201,9 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ maxWidth: 640 }}>
-        <ProviderSection
-          title="对话模型 (LLM)"
-          value={llm}
-          onChange={setLlm}
-          isEmbedding={false}
-        />
-        <ProviderSection
-          title="向量化模型 (Embedding)"
-          value={embedding}
-          onChange={setEmbedding}
-          isEmbedding={true}
-        />
-
+        <ProviderSection title="对话模型 (LLM)" value={llm} onChange={setLlm} isEmbedding={false} />
+        <ProviderSection title="向量化模型 (Embedding)" value={embedding} onChange={setEmbedding} isEmbedding={true} />
+        <BaiduOCRSection />
         <div className="card" style={{ background: 'var(--warning-light, #fffbeb)', border: '1px solid var(--warning, #f59e0b)' }}>
           <p style={{ fontSize: 13, color: '#92400e', margin: 0 }}>
             ⚠️ 修改 Embedding 模型后，已有知识库的向量数据与新模型不兼容，需要重新上传文档。

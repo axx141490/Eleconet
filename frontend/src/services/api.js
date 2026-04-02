@@ -78,6 +78,8 @@ export const settingsAPI = {
   getModel: () => api.get('/settings/model'),
   updateModel: (data) => api.put('/settings/model', data),
   getProviders: () => api.get('/settings/providers'),
+  getBaiduOCR: () => api.get('/settings/baidu-ocr'),
+  updateBaiduOCR: (data) => api.put('/settings/baidu-ocr', data),
 };
 
 // ─── Misc ───────────────────────────────────────────

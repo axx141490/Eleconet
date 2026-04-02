@@ -8,6 +8,7 @@ from app.models.user import User
 from app.services.llm_provider import (
     load_model_config, save_model_config, PROVIDER_PRESETS
 )
+from app.services.baidu_ocr import load_baidu_config, save_baidu_config
 
 router = APIRouter(prefix="/api/settings", tags=["Settings"])
 
@@ -75,3 +76,37 @@ async def update_model_config(
 @router.get("/providers")
 async def get_providers(current_user: User = Depends(get_current_user)):
     return PROVIDER_PRESETS
+
+
+class BaiduOCRConfig(BaseModel):
+    api_key: Optional[str] = ""
+    secret_key: Optional[str] = ""
+
+
+@router.get("/baidu-ocr")
+async def get_baidu_ocr_config(current_user: User = Depends(get_current_user)):
+    config = load_baidu_config()
+    return {
+        "api_key": _mask_key(config.get("api_key", "")),
+        "secret_key": _mask_key(config.get("secret_key", "")),
+        "enabled": bool(config.get("api_key") and config.get("secret_key")),
+    }
+
+
+@router.put("/baidu-ocr")
+async def update_baidu_ocr_config(
+    data: BaiduOCRConfig,
+    current_user: User = Depends(get_current_user),
+):
+    current = load_baidu_config()
+
+    def merge_key(new_key: str, old_key: str) -> str:
+        if new_key and "****" not in new_key:
+            return new_key
+        return old_key
+
+    save_baidu_config({
+        "api_key": merge_key(data.api_key or "", current.get("api_key", "")),
+        "secret_key": merge_key(data.secret_key or "", current.get("secret_key", "")),
+    })
+    return {"message": "百度 OCR 配置已保存"}
