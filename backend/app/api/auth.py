@@ -83,8 +83,11 @@ async def change_password(
     """Change current user's password."""
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="当前密码不正确")
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="新密码不能少于6位")
+    try:
+        from app.api.schemas import validate_password_strength
+        validate_password_strength(data.new_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     current_user.hashed_password = hash_password(data.new_password)
     current_user.updated_at = datetime.utcnow()
     await db.flush()

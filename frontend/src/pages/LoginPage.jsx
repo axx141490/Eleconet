@@ -12,6 +12,15 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isRegister) {
+      const errs = [];
+      if (form.password.length < 8) errs.push('至少 8 位');
+      if (!/[A-Z]/.test(form.password)) errs.push('至少一个大写字母');
+      if (!/[a-z]/.test(form.password)) errs.push('至少一个小写字母');
+      if (!/\d/.test(form.password)) errs.push('至少一个数字');
+      if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(form.password)) errs.push('至少一个特殊符号');
+      if (errs.length) { toast.error('密码需满足：' + errs.join('、')); return; }
+    }
     setLoading(true);
     try {
       if (isRegister) {
@@ -65,7 +74,7 @@ export default function LoginPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="请输入密码"
               required
-              minLength={6}
+              minLength={8}
             />
           </div>
           <div className="form-actions">

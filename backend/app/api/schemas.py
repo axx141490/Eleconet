@@ -1,15 +1,37 @@
 """Pydantic schemas for API request/response validation."""
 
-from pydantic import BaseModel, EmailStr, Field
+import re
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
+
+def validate_password_strength(v: str) -> str:
+    errors = []
+    if len(v) < 8:
+        errors.append("至少 8 位")
+    if not re.search(r'[A-Z]', v):
+        errors.append("至少一个大写字母")
+    if not re.search(r'[a-z]', v):
+        errors.append("至少一个小写字母")
+    if not re.search(r'\d', v):
+        errors.append("至少一个数字")
+    if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]', v):
+        errors.append("至少一个特殊符号（如 !@#$%^&*）")
+    if errors:
+        raise ValueError("密码需满足：" + "、".join(errors))
+    return v
 
 
 # ─── Auth Schemas ───────────────────────────────────────────
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., max_length=100)
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class UserLogin(BaseModel):

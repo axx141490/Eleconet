@@ -97,7 +97,13 @@ function ChangePasswordSection() {
 
   const handleSave = async () => {
     if (!current) { toast.error('请输入当前密码'); return; }
-    if (next.length < 6) { toast.error('新密码不能少于6位'); return; }
+    const errs = [];
+    if (next.length < 8) errs.push('至少 8 位');
+    if (!/[A-Z]/.test(next)) errs.push('至少一个大写字母');
+    if (!/[a-z]/.test(next)) errs.push('至少一个小写字母');
+    if (!/\d/.test(next)) errs.push('至少一个数字');
+    if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(next)) errs.push('至少一个特殊符号');
+    if (errs.length) { toast.error('密码需满足：' + errs.join('、')); return; }
     if (next !== confirm) { toast.error('两次输入的新密码不一致'); return; }
     setSaving(true);
     try {
@@ -109,7 +115,14 @@ function ChangePasswordSection() {
     } finally { setSaving(false); }
   };
 
-  const strength = next.length === 0 ? null : next.length < 6 ? 'weak' : next.length < 10 ? 'medium' : 'strong';
+  const passedRules = next.length === 0 ? 0 : [
+    next.length >= 8,
+    /[A-Z]/.test(next),
+    /[a-z]/.test(next),
+    /\d/.test(next),
+    /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(next),
+  ].filter(Boolean).length;
+  const strength = next.length === 0 ? null : passedRules <= 2 ? 'weak' : passedRules <= 4 ? 'medium' : 'strong';
   const strengthMap = { weak: ['#ef4444', '弱'], medium: ['#f59e0b', '中'], strong: ['#22c55e', '强'] };
 
   return (
@@ -126,7 +139,7 @@ function ChangePasswordSection() {
 
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>新密码</label>
-        <PasswordInput value={next} onChange={(e) => setNext(e.target.value)} placeholder="至少 6 位" />
+        <PasswordInput value={next} onChange={(e) => setNext(e.target.value)} placeholder="大小写字母 + 数字 + 符号，至少 8 位" />
         {strength && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
             {['weak', 'medium', 'strong'].map((s) => (

@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     # Whisper
     WHISPER_MODEL: str = "base"
 
+    # SMTP Email
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 465
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

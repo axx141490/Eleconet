@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_admin, hash_password
 from app.models.user import User
+from app.services.email_service import generate_password, send_password_reset_email
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
@@ -68,6 +69,33 @@ async def update_user(
 
     await db.flush()
     return user
+
+
+@router.post("/reset-all-passwords")
+async def reset_all_passwords(
+    current_user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin: reset every user's password to a random value and notify via email."""
+    result = await db.execute(select(User))
+    users = result.scalars().all()
+
+    succeeded, failed = [], []
+    for user in users:
+        new_pwd = generate_password()
+        user.hashed_password = hash_password(new_pwd)
+        try:
+            send_password_reset_email(user.email, user.username, new_pwd)
+            succeeded.append({"id": user.id, "username": user.username, "email": user.email})
+        except Exception as e:
+            failed.append({"id": user.id, "username": user.username, "email": user.email, "error": str(e)})
+
+    await db.flush()
+    return {
+        "message": f"重置完成：成功 {len(succeeded)} 人，失败 {len(failed)} 人",
+        "succeeded": succeeded,
+        "failed": failed,
+    }
 
 
 @router.delete("/users/{user_id}")
