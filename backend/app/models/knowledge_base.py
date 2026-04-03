@@ -1,6 +1,6 @@
 """Knowledge base and document models."""
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, BigInteger, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, BigInteger, Enum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -61,3 +61,21 @@ class Document(Base):
 
     # Relationships
     knowledge_base = relationship("KnowledgeBase", back_populates="documents")
+
+
+class KBTemplate(Base):
+    __tablename__ = "kb_templates"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, default="")
+    category = Column(String(100), default="通用")   # e.g. 医疗/法律/金融/教育/通用
+    tags = Column(String(500), default="")            # comma-separated tag list
+    sample_docs_hint = Column(Text, default="")       # guidance on what docs to upload
+    use_count = Column(Integer, default=0)            # how many times this template was used
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    creator = relationship("User", foreign_keys=[created_by])

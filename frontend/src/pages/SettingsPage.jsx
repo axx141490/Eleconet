@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { settingsAPI, paymentAPI } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
+import { settingsAPI } from '../services/api';
 import { Save, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -163,111 +162,7 @@ function BaiduOCRSection() {
   );
 }
 
-function PaymentConfigSection() {
-  const inputStyle2 = { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, boxSizing: 'border-box' };
-  const [cfg, setCfg] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    paymentAPI.getConfig().then((res) => setCfg(res.data)).catch(() => {});
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await paymentAPI.updateConfig(cfg);
-      toast.success('支付配置已保存');
-    } catch { toast.error('保存失败'); }
-    finally { setSaving(false); }
-  };
-
-  if (!cfg) return null;
-
-  const priceField = (label, key) => (
-    <div>
-      <label style={{ display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>{label}（分，100=¥1）</label>
-      <input type="number" value={cfg.pricing[key] || 0} style={inputStyle2}
-        onChange={(e) => setCfg({ ...cfg, pricing: { ...cfg.pricing, [key]: parseInt(e.target.value) } })} />
-    </div>
-  );
-
-  const wcField = (label, key, type = 'text') => (
-    <div>
-      <label style={{ display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</label>
-      <input type={type} value={cfg.wechat[key] || ''} placeholder={key.includes('key') ? '已设置则留空' : ''} style={inputStyle2}
-        onChange={(e) => setCfg({ ...cfg, wechat: { ...cfg.wechat, [key]: e.target.value } })} />
-    </div>
-  );
-
-  const apField = (label, key, type = 'text') => (
-    <div>
-      <label style={{ display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</label>
-      <input type={type} value={cfg.alipay[key] || ''} placeholder={key.includes('key') ? '已设置则留空' : ''} style={inputStyle2}
-        onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, [key]: e.target.value } })} />
-    </div>
-  );
-
-  return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <h3 style={{ fontSize: 16, marginBottom: 16 }}>支付配置</h3>
-
-      <h4 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>定价（单位：分）</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-        {priceField('Pro 月付', 'pro_monthly')}
-        {priceField('Pro 年付', 'pro_yearly')}
-        {priceField('Enterprise 月付', 'enterprise_monthly')}
-        {priceField('Enterprise 年付', 'enterprise_yearly')}
-      </div>
-
-      <h4 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>微信支付</h4>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 14, cursor: 'pointer' }}>
-        <input type="checkbox" checked={cfg.wechat.enabled}
-          onChange={(e) => setCfg({ ...cfg, wechat: { ...cfg.wechat, enabled: e.target.checked } })}
-          style={{ width: 16, height: 16, cursor: 'pointer' }} />
-        启用微信支付
-      </label>
-      <div style={{ display: 'grid', gap: 10, marginBottom: 20 }}>
-        {wcField('AppID', 'appid')}
-        {wcField('MchID（商户号）', 'mchid')}
-        {wcField('Cert Serial No', 'cert_serial_no')}
-        {wcField('APIv3 Key', 'apiv3_key', 'password')}
-        {wcField('Private Key（PEM 内容）', 'private_key', 'password')}
-        {wcField('回调通知 URL', 'notify_url')}
-      </div>
-
-      <h4 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>支付宝</h4>
-      <div style={{ display: 'flex', gap: 20, marginBottom: 12 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
-          <input type="checkbox" checked={cfg.alipay.enabled}
-            onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, enabled: e.target.checked } })}
-            style={{ width: 16, height: 16, cursor: 'pointer' }} />
-          启用支付宝
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
-          <input type="checkbox" checked={cfg.alipay.sandbox || false}
-            onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, sandbox: e.target.checked } })}
-            style={{ width: 16, height: 16, cursor: 'pointer' }} />
-          沙箱模式（测试用）
-        </label>
-      </div>
-      <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
-        {apField('App ID', 'app_id')}
-        {apField('应用私钥（RSA2）', 'private_key', 'password')}
-        {apField('支付宝公钥', 'alipay_public_key', 'password')}
-        {apField('回调通知 URL', 'notify_url')}
-        {apField('同步跳转 URL', 'return_url')}
-      </div>
-
-      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-        {saving ? <RefreshCw size={14} /> : <Save size={14} />}
-        {saving ? '保存中...' : '保存支付配置'}
-      </button>
-    </div>
-  );
-}
-
 export default function SettingsPage() {
-  const { user } = useAuth();
   const [llm, setLlm] = useState({ provider: 'openai', api_key: '', base_url: '', model: 'gpt-4o-mini' });
   const [embedding, setEmbedding] = useState({ provider: 'openai', api_key: '', base_url: '', model: 'text-embedding-3-small' });
   const [loading, setLoading] = useState(true);
@@ -318,7 +213,6 @@ export default function SettingsPage() {
         <ProviderSection title="对话模型 (LLM)" value={llm} onChange={setLlm} isEmbedding={false} />
         <ProviderSection title="向量化模型 (Embedding)" value={embedding} onChange={setEmbedding} isEmbedding={true} />
         <BaiduOCRSection />
-        {user?.is_admin && <PaymentConfigSection />}
         <div className="card" style={{ background: 'var(--warning-light, #fffbeb)', border: '1px solid var(--warning, #f59e0b)' }}>
           <p style={{ fontSize: 13, color: '#92400e', margin: 0 }}>
             ⚠️ 修改 Embedding 模型后，已有知识库的向量数据与新模型不兼容，需要重新上传文档。

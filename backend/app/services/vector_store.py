@@ -75,8 +75,8 @@ class VectorStoreService:
                 "chunk_index": str(i),
             })
 
-        # Add in batches of 100
-        batch_size = 100
+        # Add in batches of 10 (embedding API limit)
+        batch_size = 10
         for start in range(0, len(ids), batch_size):
             end = min(start + batch_size, len(ids))
             collection.add(

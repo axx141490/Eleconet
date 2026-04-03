@@ -27,6 +27,8 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., max_length=100)
     password: str = Field(..., min_length=8)
+    phone: Optional[str] = Field(None, max_length=20)
+    sms_code: Optional[str] = Field(None, max_length=6)
 
     @field_validator("password")
     @classmethod
@@ -43,6 +45,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    phone: Optional[str] = None
     is_active: bool
     is_admin: bool
     role: str = "user"

@@ -3,18 +3,20 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Database, MessageSquare, History, LogOut, Settings, ShieldCheck, Zap,
-  Mail, Shield, Clock, ChevronUp, UserCog,
+  Mail, Shield, Clock, ChevronUp, UserCog, SlidersHorizontal, Store,
 } from 'lucide-react';
 
 const baseNavItems = [
   { path: '/', icon: LayoutDashboard, label: '仪表盘' },
   { path: '/knowledge-base', icon: Database, label: '知识库' },
+  { path: '/market', icon: Store, label: '知识库市场' },
   { path: '/chat', icon: MessageSquare, label: '智能问答' },
   { path: '/conversations', icon: History, label: '对话历史' },
 ];
 
 const adminNavItems = [
   { path: '/settings', icon: Settings, label: '模型配置' },
+  { path: '/system', icon: SlidersHorizontal, label: '系统配置' },
   { path: '/admin', icon: ShieldCheck, label: '用户管理' },
 ];
 

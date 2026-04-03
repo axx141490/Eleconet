@@ -41,6 +41,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
   changeEmail: (data) => api.put('/auth/change-email', data),
+  sendSmsCode: (phone, scene = 'register') => api.post('/auth/send-sms-code', { phone, scene }),
+  loginSms: (data) => api.post('/auth/login-sms', data),
 };
 
 // ─── Knowledge Base ─────────────────────────────────
@@ -103,6 +105,9 @@ export const settingsAPI = {
   getProviders: () => api.get('/settings/providers'),
   getBaiduOCR: () => api.get('/settings/baidu-ocr'),
   updateBaiduOCR: (data) => api.put('/settings/baidu-ocr', data),
+  getSms: () => api.get('/settings/sms'),
+  updateSms: (data) => api.put('/settings/sms', data),
+  getSmsStatus: () => api.get('/settings/sms/status'),
 };
 
 // ─── Payment ────────────────────────────────────────
@@ -113,6 +118,15 @@ export const paymentAPI = {
   simulatePay: (orderNo) => api.post(`/payment/simulate-pay/${orderNo}`),
   getConfig: () => api.get('/payment/config'),
   updateConfig: (data) => api.put('/payment/config', data),
+};
+
+// ─── KB Market ──────────────────────────────────────
+export const marketAPI = {
+  list: () => api.get('/kb-market/'),
+  create: (data) => api.post('/kb-market/', data),
+  update: (id, data) => api.put(`/kb-market/${id}`, data),
+  delete: (id) => api.delete(`/kb-market/${id}`),
+  use: (id) => api.post(`/kb-market/${id}/use`),
 };
 
 // ─── Misc ───────────────────────────────────────────

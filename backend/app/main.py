@@ -17,6 +17,7 @@ from app.api.share import router as share_router
 from app.api.admin import router as admin_router
 from app.api.guest import router as guest_router
 from app.api.payment import router as payment_router
+from app.api.kb_market import router as market_router
 
 settings = get_settings()
 
@@ -61,6 +62,7 @@ app.include_router(share_router)
 app.include_router(admin_router)
 app.include_router(guest_router)
 app.include_router(payment_router)
+app.include_router(market_router)
 
 
 @app.get("/api/health")

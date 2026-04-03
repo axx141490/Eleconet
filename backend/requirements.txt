@@ -41,6 +41,9 @@ chardet==5.2.0
 wechatpayv3==1.2.29
 python-alipay-sdk==3.3.0
 
+# SMS
+alibabacloud-dysmsapi20170525==4.5.0
+
 # Utilities
 pydantic==2.5.3
 pydantic-settings==2.1.0

@@ -14,6 +14,8 @@ import AdminPage from './pages/AdminPage';
 import PricingPage from './pages/PricingPage';
 import PaymentPage from './pages/PaymentPage';
 import ProfilePage from './pages/ProfilePage';
+import SystemPage from './pages/SystemPage';
+import MarketPage from './pages/MarketPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -31,11 +33,13 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="knowledge-base" element={<KnowledgeBasePage />} />
+        <Route path="market" element={<MarketPage />} />
         <Route path="knowledge-base/:id" element={<KBDetailPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="chat/:conversationId" element={<ChatPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="system" element={<SystemPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="payment" element={<PaymentPage />} />
         <Route path="profile" element={<ProfilePage />} />
