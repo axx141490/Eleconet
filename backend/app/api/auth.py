@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -120,7 +120,7 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     """Login with username or phone number."""
     result = await db.execute(
         select(User).where(
-            (User.username == data.username) | (User.phone == data.username)
+            (User.username == data.username) | (User.phone == data.username) | (func.lower(User.email) == data.username.lower())
         )
     )
     user = result.scalar_one_or_none()

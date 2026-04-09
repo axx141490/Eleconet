@@ -177,7 +177,7 @@ export default function LoginPage() {
                   type="text"
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder={isRegister ? '请输入用户名' : '用户名或手机号'}
+                  placeholder={isRegister ? '请输入用户名' : '用户名 / 邮箱 / 手机号'}
                   required
                 />
               </div>

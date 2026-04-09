@@ -90,6 +90,19 @@ npm run dev
 docker-compose up --build
 ```
 
+> **开发提示**：若未改动 `Dockerfile` 或 `requirements.txt`，无需重新 build，直接重启即可：
+> ```bash
+> # 只改了后端 Python 代码
+> docker compose restart backend
+>
+> # 只改了前端代码
+> docker compose restart frontend
+>
+> # 前后端都改了
+> docker compose restart backend frontend
+> ```
+> 只有改了 `Dockerfile`、`requirements.txt`（后端）或 `package.json`（前端）时才需要 `docker compose up --build`。
+
 ### 访问地址
 - 前端界面：http://localhost:3000
 - 后端 API：http://localhost:8000
