@@ -197,7 +197,7 @@ def wechat_verify_callback(headers: dict, body: bytes) -> Optional[Dict]:
 # ── Alipay ────────────────────────────────────────────────────────────────
 
 async def alipay_create_order(order_no: str, amount_fen: int, tier: str, duration_months: int) -> Optional[str]:
-    """Create Alipay precreate QR pay order. Returns qr_code string."""
+    """Create Alipay PC web pay order. Returns redirect URL string."""
     config = load_config()
     acfg = config["alipay"]
     if not acfg.get("enabled"):
@@ -216,13 +216,16 @@ async def alipay_create_order(order_no: str, amount_fen: int, tier: str, duratio
             sign_type="RSA2",
             debug=acfg.get("sandbox", False),
         )
-        result = ap.api_alipay_trade_precreate(
+        # 电脑网站支付：生成跳转 URL
+        order_string = ap.api_alipay_trade_page_pay(
             subject=subject,
             out_trade_no=order_no,
             total_amount=amount_yuan,
+            return_url=acfg.get("return_url", ""),
+            notify_url=acfg.get("notify_url", ""),
         )
-        if result.get("code") == "10000":
-            return result.get("qr_code")
+        gateway = "https://openapi-sandbox.dl.alipaydev.com/gateway.do" if acfg.get("sandbox") else "https://openapi.alipay.com/gateway.do"
+        return f"{gateway}?{order_string}"
     except ImportError:
         pass
     except Exception as e:

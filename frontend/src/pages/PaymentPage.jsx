@@ -38,8 +38,6 @@ export default function PaymentPage() {
   const createOrder = async () => {
     setStatus('creating');
     try {
-      // Check if sandbox mode is on
-      const cfgRes = await paymentAPI.getPlans().catch(() => null);
       const [plansRes, orderRes] = await Promise.all([
         paymentAPI.getPlans(),
         paymentAPI.createOrder({ tier, duration_months: months, pay_method: method }),
@@ -47,6 +45,13 @@ export default function PaymentPage() {
       setSandbox(plansRes.data?.alipay_sandbox || false);
       orderNoRef.current = orderRes.data.order_no;
       setOrder(orderRes.data);
+
+      // 支付宝电脑网站支付：直接跳转
+      if (method === 'alipay' && orderRes.data.qr_code_url) {
+        window.location.href = orderRes.data.qr_code_url;
+        return;
+      }
+
       setStatus('pending');
       pollRef.current = setInterval(pollStatus, 3000);
     } catch (err) {

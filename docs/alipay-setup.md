@@ -1,4 +1,4 @@
-# 支付宝支付接入教程
+# 支付宝支付接入教程（电脑网站支付）
 
 ## 一、前提条件
 
@@ -16,13 +16,13 @@
 
 ---
 
-## 三、开通当面付能力
+## 三、开通电脑网站支付能力
 
 1. 进入应用详情 → **能力列表** → 添加能力
-2. 搜索"当面付"，申请开通
+2. 搜索"电脑网站支付"，申请开通
 3. 等待审核（通常 1 个工作日）
 
-> 本系统使用的是 `alipay.trade.precreate`（扫码付），属于当面付能力。
+> 本系统使用 `alipay.trade.page.pay` 接口，用户点击支付后跳转至支付宝页面完成付款，支付完成后回跳到系统。
 
 ---
 
@@ -44,22 +44,33 @@
 
 ---
 
-## 五、配置回调地址
+## 五、配置回调与跳转地址
 
-回调地址（notify_url）是支付宝异步通知本系统的地址，格式：
+### 异步回调地址（notify_url）
+
+支付宝支付成功后异步通知本系统，格式：
 
 ```
-https://你的域名/api/payment/callback/alipay
+https://www.eleconet.cn/api/payment/callback/alipay
 ```
 
 **要求：**
 - 必须是公网可访问的 HTTPS 地址
 - 不能是 localhost 或内网地址
 
-本地开发可使用 ngrok：
+### 同步跳转地址（return_url）
+
+用户在支付宝页面完成支付后，浏览器跳回的地址：
+
+```
+https://www.eleconet.cn/pricing
+```
+
+> `return_url` 仅用于页面跳转展示，订单状态以 `notify_url` 的异步通知为准。
+
+本地开发 notify_url 可使用 ngrok：
 ```bash
 ngrok http 8000
-# 将生成的地址填入，如：
 # https://xxxx.ngrok-free.app/api/payment/callback/alipay
 ```
 
@@ -76,52 +87,65 @@ ngrok http 8000
 | App ID | 开放平台的应用 APPID | `2021000122XXXXXX` |
 | 应用私钥 | 你生成的 RSA2 私钥 | `MIIEpAIB...` |
 | 支付宝公钥 | 平台生成的公钥 | `MIIBIjAN...` |
-| 回调地址 | 公网可访问的 notify_url | `https://你的域名/api/payment/callback/alipay` |
+| 回调地址 | 公网可访问的 notify_url | `https://www.eleconet.cn/api/payment/callback/alipay` |
+| 跳转地址 | 支付完成后回跳地址 | `https://www.eleconet.cn/pricing` |
 
 填写完成后点击保存。
 
 ---
 
-## 七、沙箱测试
+## 七、支付流程说明
 
-### 7.1 开启沙箱模式
+1. 用户点击"升级套餐" → 选择支付宝
+2. 系统创建订单，浏览器**自动跳转**至支付宝收银台
+3. 用户在支付宝页面完成付款
+4. 支付宝异步回调 `notify_url`，系统升级用户套餐
+5. 浏览器跳回 `return_url` 页面
+
+---
+
+## 八、沙箱测试
+
+### 8.1 开启沙箱模式
 
 管理后台勾选"沙箱模式"，使用[沙箱环境](https://open.alipay.com/develop/sandbox/app)的密钥和 APPID。
 
-沙箱 APPID 格式为 `9021000XXXXXXXXX`。
+沙箱 APPID 格式为 `9021000XXXXXXXXX`，沙箱网关为：
+```
+https://openapi-sandbox.dl.alipaydev.com/gateway.do
+```
 
-### 7.2 测试支付流程
+### 8.2 测试支付流程
 
-1. 前端点击升级套餐 → 选择支付宝 → 生成二维码
-2. 使用**支付宝沙箱 App**（在沙箱控制台下载）扫码
+1. 前端选择支付宝付款 → 跳转至沙箱收银台
+2. 使用沙箱买家账号完成付款（账号在沙箱控制台查看）
 3. 支付成功后系统自动升级套餐
 
-### 7.3 模拟支付（无需扫码）
+### 8.3 模拟支付（跳过页面）
 
-沙箱模式下可直接调用模拟支付接口：
+沙箱模式下可直接调用模拟支付接口，无需跳转：
 
 ```bash
-curl -X POST https://你的域名/api/payment/simulate-pay/{order_no} \
+curl -X POST https://www.eleconet.cn/api/payment/simulate-pay/{order_no} \
   -H "Authorization: Bearer {token}"
 ```
 
 ---
 
-## 八、生产上线
+## 九、生产上线
 
 1. 关闭沙箱模式（取消勾选"沙箱模式"）
 2. 将 APPID、密钥替换为正式环境的值
-3. notify_url 替换为正式域名
-4. 确认当面付能力审核已通过
+3. notify_url 和 return_url 使用正式域名
+4. 确认"电脑网站支付"能力审核已通过
 
 ---
 
-## 九、常见问题
+## 十、常见问题
 
-**Q: 下单返回 502 "支付宝下单失败"**
+**Q: 点击支付后没有跳转**
 - 检查 APPID 是否正确
 - 检查私钥格式（确保是 RSA2，不是 RSA）
-- 检查当面付能力是否已开通审核通过
 - 查看后端日志：`docker compose logs backend`
 
 **Q: 支付成功但套餐没升级**
