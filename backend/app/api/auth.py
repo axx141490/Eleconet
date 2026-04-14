@@ -5,13 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, get_current_user
 from app.models.user import User
 from app.api.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
 from app.services.sms_service import load_sms_config, send_sms_code, verify_code
+from app.api.settings import load_session_config
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -67,7 +68,8 @@ async def login_sms(data: SmsLoginRequest, db: AsyncSession = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已被禁用")
 
-    token = create_access_token(data={"sub": str(user.id)})
+    expire_hours = load_session_config().get("token_expire_hours", 24)
+    token = create_access_token(data={"sub": str(user.id)}, expires_delta=timedelta(hours=expire_hours))
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
@@ -108,7 +110,8 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.flush()
 
-    token = create_access_token(data={"sub": str(user.id)})
+    expire_hours = load_session_config().get("token_expire_hours", 24)
+    token = create_access_token(data={"sub": str(user.id)}, expires_delta=timedelta(hours=expire_hours))
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
@@ -134,7 +137,8 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is disabled")
 
-    token = create_access_token(data={"sub": str(user.id)})
+    expire_hours = load_session_config().get("token_expire_hours", 24)
+    token = create_access_token(data={"sub": str(user.id)}, expires_delta=timedelta(hours=expire_hours))
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),

@@ -226,6 +226,46 @@ function SmsConfigSection() {
   );
 }
 
+// ─── 会话有效期 ──────────────────────────────────────────────
+function SessionConfigSection() {
+  const [hours, setHours] = useState(24);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    settingsAPI.getSession().then((res) => setHours(res.data.token_expire_hours ?? 24)).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await settingsAPI.updateSession({ token_expire_hours: hours });
+      toast.success('会话配置已保存');
+    } catch { toast.error('保存失败'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 24 }}>
+      <h3 style={{ fontSize: 16, marginBottom: 16 }}>会话有效期</h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <input
+          type="number" min={1} max={8760} value={hours}
+          onChange={(e) => setHours(Math.max(1, Math.min(8760, parseInt(e.target.value) || 1)))}
+          style={{ ...inputStyle, width: 100 }}
+        />
+        <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>小时（1 小时 – 365 天）</span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
+        用户登录后 Token 的有效时长，超时后需重新登录。修改不影响已登录用户。
+      </p>
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ marginTop: 12 }}>
+        {saving ? <RefreshCw size={14} /> : <Save size={14} />}
+        {saving ? '保存中...' : '保存'}
+      </button>
+    </div>
+  );
+}
+
 // ─── 页面 ─────────────────────────────────────────────────────
 export default function SystemPage() {
   return (
@@ -237,6 +277,7 @@ export default function SystemPage() {
         </div>
       </div>
       <div style={{ maxWidth: 640 }}>
+        <SessionConfigSection />
         <SmsConfigSection />
         <PaymentConfigSection />
       </div>

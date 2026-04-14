@@ -32,6 +32,15 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
+  const loginSms = async (phone, sms_code) => {
+    const res = await authAPI.loginSms({ phone, sms_code });
+    const { access_token, user: userData } = res.data;
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return userData;
+  };
+
   const register = async (username, email, password, phone, sms_code) => {
     const res = await authAPI.register({ username, email, password, phone, sms_code });
     const { access_token, user: userData } = res.data;
@@ -56,7 +65,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginSms, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

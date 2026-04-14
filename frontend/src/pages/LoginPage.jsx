@@ -94,7 +94,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', email: '', password: '', phone: '', sms_code: '' });
   const [loading, setLoading] = useState(false);
   const [smsCfg, setSmsCfg] = useState({ enabled: false, require_phone_on_register: false });
-  const { login, register } = useAuth();
+  const { login, loginSms, register } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,10 +128,7 @@ export default function LoginPage() {
         await register(form.username, form.email, form.password, form.phone || undefined, form.sms_code || undefined);
         toast.success('注册成功！');
       } else if (loginTab === 'sms') {
-        const res = await authAPI.loginSms({ phone: form.phone, sms_code: form.sms_code });
-        const { access_token, user: userData } = res.data;
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        await loginSms(form.phone, form.sms_code);
         toast.success('登录成功！');
       } else {
         await login(form.username, form.password);

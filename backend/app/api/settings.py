@@ -1,5 +1,7 @@
 """Model configuration API endpoints."""
 
+import json
+import os
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
@@ -10,6 +12,22 @@ from app.services.llm_provider import (
 )
 from app.services.baidu_ocr import load_baidu_config, save_baidu_config
 from app.services.sms_service import load_sms_config, save_sms_config
+
+SESSION_CONFIG_PATH = "./data/session_config.json"
+_SESSION_DEFAULT = {"token_expire_hours": 24}
+
+
+def load_session_config() -> dict:
+    if os.path.exists(SESSION_CONFIG_PATH):
+        with open(SESSION_CONFIG_PATH, "r") as f:
+            return {**_SESSION_DEFAULT, **json.load(f)}
+    return _SESSION_DEFAULT.copy()
+
+
+def save_session_config(cfg: dict):
+    os.makedirs(os.path.dirname(SESSION_CONFIG_PATH), exist_ok=True)
+    with open(SESSION_CONFIG_PATH, "w") as f:
+        json.dump(cfg, f, indent=2)
 
 router = APIRouter(prefix="/api/settings", tags=["Settings"])
 
@@ -209,3 +227,23 @@ async def get_sms_status():
         "enabled": config.get("enabled", False),
         "require_phone_on_register": config.get("require_phone_on_register", False),
     }
+
+
+# ─── Session Config ──────────────────────────────────────
+
+class SessionConfig(BaseModel):
+    token_expire_hours: int
+
+
+@router.get("/session")
+async def get_session_config(current_user=Depends(require_admin)):
+    return load_session_config()
+
+
+@router.put("/session")
+async def update_session_config(data: SessionConfig, current_user=Depends(require_admin)):
+    if data.token_expire_hours < 1 or data.token_expire_hours > 8760:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="有效期须在 1 小时到 365 天之间")
+    save_session_config({"token_expire_hours": data.token_expire_hours})
+    return {"message": "会话配置已保存"}

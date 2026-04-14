@@ -108,6 +108,8 @@ export const settingsAPI = {
   getSms: () => api.get('/settings/sms'),
   updateSms: (data) => api.put('/settings/sms', data),
   getSmsStatus: () => api.get('/settings/sms/status'),
+  getSession: () => api.get('/settings/session'),
+  updateSession: (data) => api.put('/settings/session', data),
 };
 
 // ─── Payment ────────────────────────────────────────
