@@ -33,6 +33,11 @@ CODE_TTL = 300   # 5 分钟有效
 SEND_COOLDOWN = 60  # 同一号码 60 秒内不可重复发送
 _last_sent: Dict[str, float] = {}
 
+# 验证失败次数限制：phone -> (失败次数, 锁定到期时间)
+_verify_failures: Dict[str, Tuple[int, float]] = {}
+MAX_VERIFY_ATTEMPTS = 5   # 最多失败 5 次
+VERIFY_LOCKOUT = 600      # 锁定 10 分钟
+
 
 def load_sms_config() -> dict:
     if os.path.exists(CONFIG_PATH):
@@ -70,16 +75,33 @@ def check_cooldown(phone: str):
 
 
 def verify_code(phone: str, code: str) -> bool:
+    now = time.time()
+
+    # 检查是否被锁定
+    failures, locked_until = _verify_failures.get(phone, (0, 0))
+    if locked_until > now:
+        remaining = int(locked_until - now)
+        raise RuntimeError(f"验证码错误次数过多，请 {remaining} 秒后再试")
+
     entry = _code_store.get(phone)
     if not entry:
         return False
     stored_code, expire_at = entry
-    if time.time() > expire_at:
+    if now > expire_at:
         _code_store.pop(phone, None)
         return False
     if stored_code != code:
+        # 累计失败次数
+        failures += 1
+        if failures >= MAX_VERIFY_ATTEMPTS:
+            _verify_failures[phone] = (failures, now + VERIFY_LOCKOUT)
+        else:
+            _verify_failures[phone] = (failures, 0)
         return False
+
+    # 验证成功，清除记录
     _code_store.pop(phone, None)
+    _verify_failures.pop(phone, None)
     return True
 
 
