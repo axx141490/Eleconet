@@ -1,4 +1,4 @@
-# 生产 HTTPS 部署方案（elecone.chat）
+# 生产 HTTPS 部署方案（eleconet.cn）
 
 ## 架构概览
 
@@ -36,7 +36,7 @@ rag-knowledge-base/
 # HTTP → 重定向到 HTTPS
 server {
     listen 80;
-    server_name elecone.chat www.elecone.chat;
+    server_name eleconet.cn www.eleconet.cn;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -50,10 +50,10 @@ server {
 # HTTPS
 server {
     listen 443 ssl;
-    server_name elecone.chat www.elecone.chat;
+    server_name eleconet.cn www.eleconet.cn;
 
-    ssl_certificate     /etc/letsencrypt/live/elecone.chat/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/elecone.chat/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/eleconet.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/eleconet.cn/privkey.pem;
 
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
@@ -141,21 +141,21 @@ export Ali_Secret="你的AccessKeySecret"
 # 签发（同时覆盖裸域名和 www）
 ~/.acme.sh/acme.sh --issue \
   --dns dns_ali \
-  -d elecone.chat \
-  -d www.elecone.chat
+  -d eleconet.cn \
+  -d www.eleconet.cn
 ```
 
-成功后证书位于：`/root/.acme.sh/elecone.chat_ecc/`
+成功后证书位于：`/root/.acme.sh/eleconet.cn_ecc/`
 
 ### 4.4 安装证书到 Nginx volume 路径
 
 ```bash
-mkdir -p /home/rag-knowledge-base/nginx/certbot/conf/live/elecone.chat
+mkdir -p /home/rag-knowledge-base/nginx/certbot/conf/live/eleconet.cn
 
 ~/.acme.sh/acme.sh --install-cert \
-  -d elecone.chat \
-  --fullchain-file /home/rag-knowledge-base/nginx/certbot/conf/live/elecone.chat/fullchain.pem \
-  --key-file       /home/rag-knowledge-base/nginx/certbot/conf/live/elecone.chat/privkey.pem \
+  -d eleconet.cn \
+  --fullchain-file /home/rag-knowledge-base/nginx/certbot/conf/live/eleconet.cn/fullchain.pem \
+  --key-file       /home/rag-knowledge-base/nginx/certbot/conf/live/eleconet.cn/privkey.pem \
   --reloadcmd      "docker compose -f /home/rag-knowledge-base/docker-compose.yml exec nginx nginx -s reload"
 ```
 
@@ -174,7 +174,7 @@ Vite 默认只响应 localhost 的请求，通过 Nginx 代理后 Host 头变为
 ```js
 server: {
   port: 3000,
-  allowedHosts: ['elecone.chat', 'www.elecone.chat'],
+  allowedHosts: ['eleconet.cn', 'www.eleconet.cn'],
   proxy: {
     '/api': {
       target: 'http://backend:8000',
@@ -198,7 +198,7 @@ docker compose up -d
 docker compose restart frontend
 
 # 验证 HTTPS
-curl -I https://www.elecone.chat
+curl -I https://www.eleconet.cn
 ```
 
 ---
@@ -219,8 +219,8 @@ crontab -l | grep acme
 
 ```python
 allow_origins=[
-    "https://elecone.chat",
-    "https://www.elecone.chat",
+    "https://eleconet.cn",
+    "https://www.eleconet.cn",
     "http://localhost:3000",
     "http://localhost:5173",
 ]

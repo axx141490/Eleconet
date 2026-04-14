@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    allowedHosts: ['elecone.chat', 'www.elecone.chat'],
+    allowedHosts: ['eleconet.cn', 'www.eleconet.cn'],
     proxy: {
       '/api': {
         target: 'http://backend:8000',
