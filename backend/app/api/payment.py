@@ -331,13 +331,18 @@ async def update_payment_config(
     if data.pricing:
         config["pricing"].update(data.pricing)
     if data.wechat:
-        # Don't overwrite with masked values
         for k, v in data.wechat.items():
-            if v and "****" not in str(v):
-                config["wechat"][k] = v
+            if v is None:
+                continue
+            if isinstance(v, str) and "****" in v:
+                continue  # 脱敏占位符，跳过
+            config["wechat"][k] = v
     if data.alipay:
         for k, v in data.alipay.items():
-            if v and "****" not in str(v):
-                config["alipay"][k] = v
+            if v is None:
+                continue
+            if isinstance(v, str) and "****" in v:
+                continue  # 脱敏占位符，跳过
+            config["alipay"][k] = v
     ps.save_config(config)
     return {"message": "配置已保存"}
