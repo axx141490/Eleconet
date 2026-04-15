@@ -43,7 +43,15 @@ function PaymentConfigSection() {
   const apField = (label, key, type = 'text') => (
     <div>
       <label style={{ display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</label>
-      <input type={type} value={cfg.alipay[key] || ''} placeholder={key.includes('key') ? '已设置则留空' : ''} style={s}
+      <input type={type} value={cfg.alipay[key] || ''} placeholder='已设置则留空' style={s}
+        onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, [key]: e.target.value } })} />
+    </div>
+  );
+  const apTextarea = (label, key) => (
+    <div>
+      <label style={{ display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</label>
+      <textarea value={cfg.alipay[key] || ''} placeholder='已设置则留空，粘贴证书文件全部内容（含 -----BEGIN CERTIFICATE----- 头尾）'
+        rows={4} style={{ ...s, fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
         onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, [key]: e.target.value } })} />
     </div>
   );
@@ -77,7 +85,7 @@ function PaymentConfigSection() {
       </div>
 
       <h4 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>支付宝</h4>
-      <div style={{ display: 'flex', gap: 20, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 20, marginBottom: 12, flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
           <input type="checkbox" checked={cfg.alipay.enabled}
             onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, enabled: e.target.checked } })}
@@ -90,13 +98,27 @@ function PaymentConfigSection() {
             style={{ width: 16, height: 16, cursor: 'pointer' }} />
           沙箱模式（测试用）
         </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+          <input type="checkbox" checked={cfg.alipay.cert_mode !== false}
+            onChange={(e) => setCfg({ ...cfg, alipay: { ...cfg.alipay, cert_mode: e.target.checked } })}
+            style={{ width: 16, height: 16, cursor: 'pointer' }} />
+          证书验证模式（推荐）
+        </label>
       </div>
       <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
         {apField('App ID', 'app_id')}
         {apField('应用私钥（RSA2）', 'private_key', 'password')}
-        {apField('支付宝公钥', 'alipay_public_key', 'password')}
         {apField('回调通知 URL', 'notify_url')}
         {apField('同步跳转 URL', 'return_url')}
+        {cfg.alipay.cert_mode !== false ? (
+          <>
+            {apTextarea('应用证书（appCertPublicKey_xxx.crt）', 'app_cert')}
+            {apTextarea('支付宝公钥证书（alipayCertPublicKey_RSA2.crt）', 'alipay_cert')}
+            {apTextarea('支付宝根证书（alipayRootCert.crt）', 'alipay_root_cert')}
+          </>
+        ) : (
+          apField('支付宝公钥', 'alipay_public_key', 'password')
+        )}
       </div>
 
       <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
