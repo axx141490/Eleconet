@@ -30,8 +30,14 @@ DEFAULT_CONFIG = {
     "alipay": {
         "enabled": False,
         "sandbox": False,
+        "cert_mode": True,          # True=证书验证，False=公钥验证
         "app_id": "",
         "private_key": "",
+        # 证书模式（cert_mode=True）所需，填证书文件内容（PEM 格式）
+        "app_cert": "",             # 应用公钥证书 appCertPublicKey_xxx.crt
+        "alipay_root_cert": "",     # 支付宝根证书 alipayRootCert.crt
+        "alipay_cert": "",          # 支付宝公钥证书 alipayCertPublicKey_RSA2.crt
+        # 公钥模式（cert_mode=False）所需
         "alipay_public_key": "",
         "notify_url": "",
         "return_url": "",
@@ -196,6 +202,35 @@ def wechat_verify_callback(headers: dict, body: bytes) -> Optional[Dict]:
 
 # ── Alipay ────────────────────────────────────────────────────────────────
 
+def _build_alipay(acfg: dict):
+    """Build AliPay instance supporting both cert mode and public key mode."""
+    from alipay import AliPay, DCAliPay
+    private_key = _normalize_private_key(acfg["private_key"])
+    sandbox = acfg.get("sandbox", False)
+
+    if acfg.get("cert_mode", True):
+        # 证书验证模式
+        return DCAliPay(
+            appid=acfg["app_id"],
+            app_notify_url=acfg.get("notify_url", ""),
+            app_private_key_string=private_key,
+            app_public_key_cert_string=acfg.get("app_cert", ""),
+            alipay_public_key_cert_string=acfg.get("alipay_cert", ""),
+            alipay_root_cert_string=acfg.get("alipay_root_cert", ""),
+            debug=sandbox,
+        )
+    else:
+        # 公钥验证模式
+        return AliPay(
+            appid=acfg["app_id"],
+            app_notify_url=acfg.get("notify_url", ""),
+            app_private_key_string=private_key,
+            alipay_public_key_string=_normalize_public_key(acfg.get("alipay_public_key", "")),
+            sign_type="RSA2",
+            debug=sandbox,
+        )
+
+
 async def alipay_create_order(order_no: str, amount_fen: int, tier: str, duration_months: int) -> Optional[str]:
     """Create Alipay PC web pay order. Returns redirect URL string."""
     config = load_config()
@@ -207,16 +242,7 @@ async def alipay_create_order(order_no: str, amount_fen: int, tier: str, duratio
     dur = "年" if duration_months == 12 else "月"
     subject = f"RAG知识库 {label} 套餐（{duration_months}{dur}）"
     try:
-        from alipay import AliPay
-        ap = AliPay(
-            appid=acfg["app_id"],
-            app_notify_url=acfg.get("notify_url", ""),
-            app_private_key_string=_normalize_private_key(acfg["private_key"]),
-            alipay_public_key_string=_normalize_public_key(acfg["alipay_public_key"]),
-            sign_type="RSA2",
-            debug=acfg.get("sandbox", False),
-        )
-        # 电脑网站支付：生成跳转 URL
+        ap = _build_alipay(acfg)
         order_string = ap.api_alipay_trade_page_pay(
             subject=subject,
             out_trade_no=order_no,
@@ -240,15 +266,7 @@ async def alipay_query_order(order_no: str) -> Optional[str]:
     if not acfg.get("enabled"):
         return None
     try:
-        from alipay import AliPay
-        ap = AliPay(
-            appid=acfg["app_id"],
-            app_notify_url=acfg.get("notify_url", ""),
-            app_private_key_string=_normalize_private_key(acfg["private_key"]),
-            alipay_public_key_string=_normalize_public_key(acfg["alipay_public_key"]),
-            sign_type="RSA2",
-            debug=acfg.get("sandbox", False),
-        )
+        ap = _build_alipay(acfg)
         result = ap.api_alipay_trade_query(out_trade_no=order_no)
         if result.get("trade_status") == "TRADE_SUCCESS":
             return "paid"
@@ -267,17 +285,9 @@ def alipay_verify_callback(data: dict) -> bool:
     if not acfg.get("enabled"):
         return False
     try:
-        from alipay import AliPay
-        ap = AliPay(
-            appid=acfg["app_id"],
-            app_notify_url=acfg.get("notify_url", ""),
-            app_private_key_string=_normalize_private_key(acfg["private_key"]),
-            alipay_public_key_string=_normalize_public_key(acfg["alipay_public_key"]),
-            sign_type="RSA2",
-            debug=acfg.get("sandbox", False),
-        )
+        ap = _build_alipay(acfg)
         sign = data.pop("sign", None)
-        sign_type = data.pop("sign_type", "RSA2")
+        data.pop("sign_type", None)
         return ap.verify(data, sign)
     except ImportError:
         return False

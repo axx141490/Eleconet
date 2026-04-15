@@ -311,8 +311,12 @@ async def get_payment_config(current_user=Depends(require_admin)):
         "pricing": config["pricing"],
         "wechat": {**config["wechat"], "private_key": mask(config["wechat"].get("private_key", "")),
                    "apiv3_key": mask(config["wechat"].get("apiv3_key", ""))},
-        "alipay": {**config["alipay"], "private_key": mask(config["alipay"].get("private_key", "")),
-                   "alipay_public_key": mask(config["alipay"].get("alipay_public_key", ""))},
+        "alipay": {**config["alipay"],
+                   "private_key": mask(config["alipay"].get("private_key", "")),
+                   "alipay_public_key": mask(config["alipay"].get("alipay_public_key", "")),
+                   "app_cert": mask(config["alipay"].get("app_cert", "")),
+                   "alipay_cert": mask(config["alipay"].get("alipay_cert", "")),
+                   "alipay_root_cert": mask(config["alipay"].get("alipay_root_cert", ""))},
     }
     return safe
 

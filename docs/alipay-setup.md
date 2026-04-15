@@ -26,17 +26,33 @@
 
 ---
 
-## 四、配置密钥
+## 四、配置密钥（证书验证模式）
 
-### 4.1 生成应用私钥 / 公钥
+本系统使用**证书验证模式**（推荐，安全性更高）。
 
-1. 应用详情 → **开发设置** → 密钥管理 → 生成密钥
-2. 使用支付宝提供的"支付宝密钥工具"生成 RSA2 密钥对
-3. 将**应用公钥**上传到开放平台
-4. 保存**应用私钥**（只显示一次，务必备份）
-5. 平台会生成**支付宝公钥**，复制保存
+### 4.1 生成应用私钥并申请证书
 
-### 4.2 密钥格式说明
+1. 应用详情 → **开发设置** → 密钥管理 → 选择"公钥证书模式"
+2. 使用支付宝"密钥工具"生成 RSA2 密钥对，得到应用私钥和应用公钥
+3. 上传应用公钥后，下载以下三个证书文件：
+
+| 文件名 | 说明 | 对应配置字段 |
+|--------|------|------------|
+| `appCertPublicKey_xxx.crt` | 应用公钥证书 | 应用证书（app_cert） |
+| `alipayCertPublicKey_RSA2.crt` | 支付宝公钥证书 | 支付宝公钥证书（alipay_cert） |
+| `alipayRootCert.crt` | 支付宝根证书 | 支付宝根证书（alipay_root_cert） |
+
+### 4.2 获取证书内容
+
+将证书文件内容（包含 `-----BEGIN CERTIFICATE-----` 头尾）完整复制，填入管理后台对应字段。
+
+```bash
+cat appCertPublicKey_xxx.crt        # 复制全部内容 → 应用证书
+cat alipayCertPublicKey_RSA2.crt    # 复制全部内容 → 支付宝公钥证书
+cat alipayRootCert.crt              # 复制全部内容 → 支付宝根证书
+```
+
+### 4.3 私钥格式说明
 
 系统支持两种格式，自动识别：
 - 带 PEM 头的完整格式（`-----BEGIN PRIVATE KEY-----`）
@@ -80,15 +96,18 @@ ngrok http 8000
 
 登录系统管理员账号 → **系统设置** → **支付配置** → 支付宝：
 
-| 字段 | 说明 | 示例 |
-|------|------|------|
-| 启用 | 是否开启支付宝支付 | ✓ |
-| 沙箱模式 | 测试时开启，上线后关闭 | 测试时 ✓ |
-| App ID | 开放平台的应用 APPID | `2021000122XXXXXX` |
-| 应用私钥 | 你生成的 RSA2 私钥 | `MIIEpAIB...` |
-| 支付宝公钥 | 平台生成的公钥 | `MIIBIjAN...` |
-| 回调地址 | 公网可访问的 notify_url | `https://www.eleconet.cn/api/payment/callback/alipay` |
-| 跳转地址 | 支付完成后回跳地址 | `https://www.eleconet.cn/pricing` |
+| 字段 | 说明 |
+|------|------|
+| 启用 | 是否开启支付宝支付 |
+| 沙箱模式 | 测试时开启，上线后关闭 |
+| 证书验证模式 | 勾选（推荐），使用证书验证 |
+| App ID | 开放平台的应用 APPID |
+| 应用私钥 | RSA2 私钥内容（含或不含 PEM 头均可） |
+| 应用证书 | `appCertPublicKey_xxx.crt` 文件全部内容 |
+| 支付宝公钥证书 | `alipayCertPublicKey_RSA2.crt` 文件全部内容 |
+| 支付宝根证书 | `alipayRootCert.crt` 文件全部内容 |
+| 回调地址 | `https://www.eleconet.cn/api/payment/callback/alipay` |
+| 跳转地址 | `https://www.eleconet.cn/pricing` |
 
 填写完成后点击保存。
 
