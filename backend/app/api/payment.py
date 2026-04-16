@@ -203,6 +203,7 @@ async def get_order_status(
             await _activate_tier(current_user.id, order.tier, order.duration_months,
                                   order_no, order_no, db)
             order.status = "paid"
+            await db.commit()
 
     return OrderStatusResponse(
         order_no=order.order_no,
