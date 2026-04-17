@@ -334,7 +334,7 @@ input:focus, textarea:focus, select:focus {
   width: 100%;
   max-width: 420px;
 }
-.login-card h1 { text-align: center; margin-bottom: 8px; }
+.login-card h1 { text-align: center; margin-bottom: 16px; }
 .login-card .subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 32px; }
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }

@@ -274,15 +274,15 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="form-toggle">
+        <div style={{ marginTop: 28 }} className="form-toggle">
           {isRegister ? '已有账号？' : '没有账号？'}
           <a href="#" onClick={(e) => { e.preventDefault(); setMode(isRegister ? 'login' : 'register'); }}>
             {isRegister ? '立即登录' : '立即注册'}
           </a>
         </div>
 
-        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
-          上海智俊元科技有限公司
+        <div style={{ marginTop: 32, paddingBottom: 8, textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+          © 2026 上海智俊元科技有限公司
         </div>
       </div>
     </div>
