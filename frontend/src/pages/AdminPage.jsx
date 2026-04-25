@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { Shield, Trash2, RefreshCw } from 'lucide-react';
+import { Shield, Trash2, RefreshCw, Pencil, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,6 +15,8 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingPhone, setEditingPhone] = useState(null);
+  const [phoneInput, setPhoneInput] = useState('');
 
   useEffect(() => {
     if (!user?.is_admin) { navigate('/'); return; }
@@ -53,6 +55,20 @@ export default function AdminPage() {
       toast.success(u.is_active ? '已禁用' : '已启用');
       setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, is_active: !x.is_active } : x));
     } catch { toast.error('操作失败'); }
+  };
+
+  const handlePhoneEdit = (u) => {
+    setEditingPhone(u.id);
+    setPhoneInput('');
+  };
+
+  const handlePhoneSave = async (userId) => {
+    try {
+      const res = await adminAPI.updateUserPhone(userId, phoneInput || null);
+      toast.success('手机号已更新');
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, phone: res.data.phone } : u));
+      setEditingPhone(null);
+    } catch (err) { toast.error(err.response?.data?.detail || '更新失败'); }
   };
 
   const handleDelete = async (userId) => {
@@ -99,7 +115,28 @@ export default function AdminPage() {
                   {u.id === user.id && <span style={{ marginLeft: 6, fontSize: 11, color: '#94a3b8' }}>（我）</span>}
                 </td>
                 <td style={{ padding: '12px 16px', color: '#64748b' }}>{u.email}</td>
-                <td style={{ padding: '12px 16px', color: '#64748b', fontFamily: 'monospace' }}>{u.phone || '-'}</td>
+                <td style={{ padding: '12px 16px' }}>
+                  {editingPhone === u.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input
+                        autoFocus
+                        value={phoneInput}
+                        onChange={(e) => setPhoneInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handlePhoneSave(u.id); if (e.key === 'Escape') setEditingPhone(null); }}
+                        placeholder="11位手机号"
+                        maxLength={11}
+                        style={{ width: 120, padding: '3px 6px', borderRadius: 6, border: '1px solid #93c5fd', fontSize: 13, fontFamily: 'monospace' }}
+                      />
+                      <button onClick={() => handlePhoneSave(u.id)} style={{ color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><Check size={15} /></button>
+                      <button onClick={() => setEditingPhone(null)} style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={15} /></button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: '#64748b', fontFamily: 'monospace' }}>{u.phone || '-'}</span>
+                      <button onClick={() => handlePhoneEdit(u)} style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><Pencil size={13} /></button>
+                    </div>
+                  )}
+                </td>
                 <td style={{ padding: '12px 16px' }}>
                   <select
                     value={u.role}

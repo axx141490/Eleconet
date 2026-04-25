@@ -1,5 +1,6 @@
 """Admin API — user management (admin only)."""
 
+import re
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -42,6 +43,19 @@ class UserRoleUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class UserPhoneUpdate(BaseModel):
+    phone: Optional[str] = None
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is None or v == '':
+            return None
+        if not re.match(r'^\d{11}$', v):
+            raise ValueError('手机号必须为 11 位数字')
+        return v
+
+
 @router.get("/users", response_model=List[UserAdminResponse])
 async def list_users(
     current_user=Depends(require_admin),
@@ -77,6 +91,30 @@ async def update_user(
 
     await db.flush()
     return user
+
+
+@router.put("/users/{user_id}/phone")
+async def update_user_phone(
+    user_id: int,
+    data: UserPhoneUpdate,
+    current_user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    if data.phone:
+        dup = await db.execute(select(User).where(User.phone == data.phone, User.id != user_id))
+        if dup.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="该手机号已被其他用户使用")
+
+    user.phone = data.phone
+    await db.flush()
+
+    masked = data.phone[:3] + '****' + data.phone[-4:] if data.phone else None
+    return {"phone": masked}
 
 
 @router.post("/reset-all-passwords")

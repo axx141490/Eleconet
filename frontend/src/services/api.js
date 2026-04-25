@@ -89,6 +89,7 @@ export const shareAPI = {
 export const adminAPI = {
   listUsers: () => api.get('/admin/users'),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  updateUserPhone: (id, phone) => api.put(`/admin/users/${id}/phone`, { phone }),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
 };
 
