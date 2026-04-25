@@ -41,6 +41,7 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
   changeEmail: (data) => api.put('/auth/change-email', data),
+  changePhone: (data) => api.put('/auth/change-phone', data),
   sendSmsCode: (phone, scene = 'register') => api.post('/auth/send-sms-code', { phone, scene }),
   loginSms: (data) => api.post('/auth/login-sms', data),
 };

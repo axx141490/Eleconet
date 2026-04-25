@@ -1,5 +1,6 @@
 """Authentication API endpoints."""
 
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -24,6 +25,11 @@ class ChangePasswordRequest(BaseModel):
 
 class ChangeEmailRequest(BaseModel):
     new_email: str
+    current_password: str
+
+
+class ChangePhoneRequest(BaseModel):
+    new_phone: str
     current_password: str
 
 
@@ -188,6 +194,30 @@ async def change_email(
         raise HTTPException(status_code=400, detail="该邮箱已被其他账号使用")
 
     current_user.email = data.new_email
+    current_user.updated_at = datetime.utcnow()
+    await db.flush()
+    return UserResponse.model_validate(current_user)
+
+
+@router.put("/change-phone", response_model=UserResponse)
+async def change_phone(
+    data: ChangePhoneRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change current user's phone number."""
+    if not re.match(r'^\d{11}$', data.new_phone):
+        raise HTTPException(status_code=400, detail="手机号必须为 11 位数字")
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="密码不正确")
+
+    existing = await db.execute(
+        select(User).where(User.phone == data.new_phone, User.id != current_user.id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="该手机号已被其他账号使用")
+
+    current_user.phone = data.new_phone
     current_user.updated_at = datetime.utcnow()
     await db.flush()
     return UserResponse.model_validate(current_user)

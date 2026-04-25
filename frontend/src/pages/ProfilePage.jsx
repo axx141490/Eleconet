@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { KeyRound, Mail, Save, Eye, EyeOff } from 'lucide-react';
+import { KeyRound, Mail, Phone, Save, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const inputStyle = {
@@ -74,6 +74,66 @@ function ChangeEmailSection({ user, onUpdated }) {
           onChange={(e) => setNewEmail(e.target.value)}
           placeholder="输入新邮箱地址"
           style={inputStyle}
+        />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>当前密码（验证身份）</label>
+        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="输入当前密码" />
+      </div>
+
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+        <Save size={14} /> {saving ? '保存中...' : '保存'}
+      </button>
+    </div>
+  );
+}
+
+function ChangePhoneSection({ user, onUpdated }) {
+  const [newPhone, setNewPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!newPhone.trim()) { toast.error('请输入新手机号'); return; }
+    if (!/^\d{11}$/.test(newPhone)) { toast.error('手机号必须为 11 位数字'); return; }
+    if (!password) { toast.error('请输入当前密码'); return; }
+    setSaving(true);
+    try {
+      const res = await authAPI.changePhone({ new_phone: newPhone.trim(), current_password: password });
+      toast.success('手机号已更新');
+      setNewPhone('');
+      setPassword('');
+      onUpdated(res.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || '更新失败');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <Phone size={18} color="#6366f1" />
+        <h3 style={{ fontSize: 16, margin: 0 }}>更换手机号</h3>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>当前手机号</label>
+        <input
+          value={user.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未绑定'}
+          disabled
+          style={{ ...inputStyle, background: '#f8fafc', color: '#94a3b8', fontFamily: 'monospace' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>新手机号</label>
+        <input
+          type="tel"
+          value={newPhone}
+          onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+          placeholder="输入 11 位手机号"
+          style={{ ...inputStyle, fontFamily: 'monospace' }}
         />
       </div>
 
@@ -189,6 +249,7 @@ export default function ProfilePage() {
 
       <div style={{ maxWidth: 520 }}>
         <ChangeEmailSection user={user} onUpdated={handleEmailUpdated} />
+        <ChangePhoneSection user={user} onUpdated={handleEmailUpdated} />
         <ChangePasswordSection />
       </div>
     </div>
