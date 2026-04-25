@@ -35,19 +35,36 @@ function PasswordInput({ value, onChange, placeholder }) {
 
 function ChangeEmailSection({ user, onUpdated }) {
   const [newEmail, setNewEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [emailCode, setEmailCode] = useState('');
   const [saving, setSaving] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  const handleSendCode = async () => {
+    if (!newEmail.trim() || !newEmail.includes('@')) { toast.error('请先输入正确的新邮箱地址'); return; }
+    try {
+      await authAPI.sendEmailCode(newEmail.trim());
+      toast.success('验证码已发送至邮箱');
+      setCountdown(60);
+      timerRef.current = setInterval(() => {
+        setCountdown((c) => { if (c <= 1) { clearInterval(timerRef.current); return 0; } return c - 1; });
+      }, 1000);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || '发送失败');
+    }
+  };
 
   const handleSave = async () => {
     if (!newEmail.trim()) { toast.error('请输入新邮箱'); return; }
     if (!newEmail.includes('@')) { toast.error('邮箱格式不正确'); return; }
-    if (!password) { toast.error('请输入当前密码'); return; }
+    if (!emailCode.trim()) { toast.error('请输入验证码'); return; }
     setSaving(true);
     try {
-      const res = await authAPI.changeEmail({ new_email: newEmail.trim(), current_password: password });
+      const res = await authAPI.changeEmail({ new_email: newEmail.trim(), email_code: emailCode.trim() });
       toast.success('邮箱已更新');
-      setNewEmail('');
-      setPassword('');
+      setNewEmail(''); setEmailCode('');
       onUpdated(res.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || '更新失败');
@@ -68,18 +85,36 @@ function ChangeEmailSection({ user, onUpdated }) {
 
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>新邮箱</label>
-        <input
-          type="email"
-          value={newEmail}
-          onChange={(e) => setNewEmail(e.target.value)}
-          placeholder="输入新邮箱地址"
-          style={inputStyle}
-        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="输入新邮箱地址"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <button
+            type="button"
+            onClick={handleSendCode}
+            disabled={countdown > 0}
+            style={{ whiteSpace: 'nowrap', padding: '0 14px', borderRadius: 8, border: '1px solid #e2e8f0',
+              background: countdown > 0 ? '#f8fafc' : '#fff', color: countdown > 0 ? '#94a3b8' : '#6366f1',
+              fontSize: 13, cursor: countdown > 0 ? 'default' : 'pointer' }}
+          >
+            {countdown > 0 ? `${countdown}s 后重发` : '发送验证码'}
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>当前密码（验证身份）</label>
-        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="输入当前密码" />
+        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>邮箱验证码</label>
+        <input
+          type="text"
+          value={emailCode}
+          onChange={(e) => setEmailCode(e.target.value.slice(0, 6))}
+          placeholder="输入 6 位验证码"
+          style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: 4 }}
+        />
       </div>
 
       <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
@@ -92,7 +127,6 @@ function ChangeEmailSection({ user, onUpdated }) {
 function ChangePhoneSection({ user, onUpdated }) {
   const [newPhone, setNewPhone] = useState('');
   const [smsCode, setSmsCode] = useState('');
-  const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef(null);
@@ -117,12 +151,11 @@ function ChangePhoneSection({ user, onUpdated }) {
     if (!newPhone.trim()) { toast.error('请输入新手机号'); return; }
     if (!/^\d{11}$/.test(newPhone)) { toast.error('手机号必须为 11 位数字'); return; }
     if (!smsCode.trim()) { toast.error('请输入验证码'); return; }
-    if (!password) { toast.error('请输入当前密码'); return; }
     setSaving(true);
     try {
-      const res = await authAPI.changePhone({ new_phone: newPhone.trim(), sms_code: smsCode.trim(), current_password: password });
+      const res = await authAPI.changePhone({ new_phone: newPhone.trim(), sms_code: smsCode.trim() });
       toast.success('手机号已更新');
-      setNewPhone(''); setSmsCode(''); setPassword('');
+      setNewPhone(''); setSmsCode('');
       onUpdated(res.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || '更新失败');
@@ -177,11 +210,6 @@ function ChangePhoneSection({ user, onUpdated }) {
           placeholder="输入 6 位验证码"
           style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: 4 }}
         />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>当前密码（验证身份）</label>
-        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="输入当前密码" />
       </div>
 
       <button className="btn btn-primary" onClick={handleSave} disabled={saving}>

@@ -13,6 +13,7 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.models.user import User
 from app.api.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
 from app.services.sms_service import load_sms_config, send_sms_code, verify_code
+from app.services.email_service import send_email_code, verify_email_code
 from app.api.settings import load_session_config
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -25,13 +26,16 @@ class ChangePasswordRequest(BaseModel):
 
 class ChangeEmailRequest(BaseModel):
     new_email: str
-    current_password: str
+    email_code: str
 
 
 class ChangePhoneRequest(BaseModel):
     new_phone: str
     sms_code: str
-    current_password: str
+
+
+class SendEmailCodeRequest(BaseModel):
+    email: str
 
 
 class SendSmsRequest(BaseModel):
@@ -42,6 +46,16 @@ class SendSmsRequest(BaseModel):
 class SmsLoginRequest(BaseModel):
     phone: str
     sms_code: str
+
+
+@router.post("/send-email-code")
+async def send_email_verification(data: SendEmailCodeRequest):
+    """Send a 6-digit verification code to the given email address."""
+    try:
+        send_email_code(data.email)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "验证码已发送至邮箱"}
 
 
 @router.post("/send-sms-code")
@@ -185,8 +199,11 @@ async def change_email(
     db: AsyncSession = Depends(get_db),
 ):
     """Change current user's email."""
-    if not verify_password(data.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="密码不正确")
+    try:
+        if not verify_email_code(data.new_email, data.email_code):
+            raise HTTPException(status_code=400, detail="验证码错误或已过期")
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     existing = await db.execute(
         select(User).where(User.email == data.new_email, User.id != current_user.id)
@@ -209,8 +226,6 @@ async def change_phone(
     """Change current user's phone number."""
     if not re.match(r'^\d{11}$', data.new_phone):
         raise HTTPException(status_code=400, detail="手机号必须为 11 位数字")
-    if not verify_password(data.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="密码不正确")
     try:
         if not verify_code(data.new_phone, data.sms_code):
             raise HTTPException(status_code=400, detail="验证码错误或已过期")
