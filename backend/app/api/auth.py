@@ -30,6 +30,7 @@ class ChangeEmailRequest(BaseModel):
 
 class ChangePhoneRequest(BaseModel):
     new_phone: str
+    sms_code: str
     current_password: str
 
 
@@ -210,6 +211,11 @@ async def change_phone(
         raise HTTPException(status_code=400, detail="手机号必须为 11 位数字")
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="密码不正确")
+    try:
+        if not verify_code(data.new_phone, data.sms_code):
+            raise HTTPException(status_code=400, detail="验证码错误或已过期")
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     existing = await db.execute(
         select(User).where(User.phone == data.new_phone, User.id != current_user.id)

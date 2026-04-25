@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { KeyRound, Mail, Phone, Save, Eye, EyeOff } from 'lucide-react';
@@ -91,19 +91,38 @@ function ChangeEmailSection({ user, onUpdated }) {
 
 function ChangePhoneSection({ user, onUpdated }) {
   const [newPhone, setNewPhone] = useState('');
+  const [smsCode, setSmsCode] = useState('');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  const handleSendCode = async () => {
+    if (!/^\d{11}$/.test(newPhone)) { toast.error('请先输入正确的 11 位手机号'); return; }
+    try {
+      await authAPI.sendSmsCode(newPhone, 'change_phone');
+      toast.success('验证码已发送');
+      setCountdown(60);
+      timerRef.current = setInterval(() => {
+        setCountdown((c) => { if (c <= 1) { clearInterval(timerRef.current); return 0; } return c - 1; });
+      }, 1000);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || '发送失败');
+    }
+  };
 
   const handleSave = async () => {
     if (!newPhone.trim()) { toast.error('请输入新手机号'); return; }
     if (!/^\d{11}$/.test(newPhone)) { toast.error('手机号必须为 11 位数字'); return; }
+    if (!smsCode.trim()) { toast.error('请输入验证码'); return; }
     if (!password) { toast.error('请输入当前密码'); return; }
     setSaving(true);
     try {
-      const res = await authAPI.changePhone({ new_phone: newPhone.trim(), current_password: password });
+      const res = await authAPI.changePhone({ new_phone: newPhone.trim(), sms_code: smsCode.trim(), current_password: password });
       toast.success('手机号已更新');
-      setNewPhone('');
-      setPassword('');
+      setNewPhone(''); setSmsCode(''); setPassword('');
       onUpdated(res.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || '更新失败');
@@ -128,12 +147,35 @@ function ChangePhoneSection({ user, onUpdated }) {
 
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>新手机号</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="tel"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+            placeholder="输入 11 位手机号"
+            style={{ ...inputStyle, flex: 1, fontFamily: 'monospace' }}
+          />
+          <button
+            type="button"
+            onClick={handleSendCode}
+            disabled={countdown > 0}
+            style={{ whiteSpace: 'nowrap', padding: '0 14px', borderRadius: 8, border: '1px solid #e2e8f0',
+              background: countdown > 0 ? '#f8fafc' : '#fff', color: countdown > 0 ? '#94a3b8' : '#6366f1',
+              fontSize: 13, cursor: countdown > 0 ? 'default' : 'pointer' }}
+          >
+            {countdown > 0 ? `${countdown}s 后重发` : '发送验证码'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#64748b', marginBottom: 5 }}>短信验证码</label>
         <input
-          type="tel"
-          value={newPhone}
-          onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
-          placeholder="输入 11 位手机号"
-          style={{ ...inputStyle, fontFamily: 'monospace' }}
+          type="text"
+          value={smsCode}
+          onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          placeholder="输入 6 位验证码"
+          style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: 4 }}
         />
       </div>
 
