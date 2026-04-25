@@ -84,6 +84,7 @@ export default function AdminPage() {
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>用户名</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>邮箱</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>手机号</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>角色</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>套餐</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>状态</th>
@@ -98,6 +99,7 @@ export default function AdminPage() {
                   {u.id === user.id && <span style={{ marginLeft: 6, fontSize: 11, color: '#94a3b8' }}>（我）</span>}
                 </td>
                 <td style={{ padding: '12px 16px', color: '#64748b' }}>{u.email}</td>
+                <td style={{ padding: '12px 16px', color: '#64748b', fontFamily: 'monospace' }}>{u.phone || '-'}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <select
                     value={u.role}

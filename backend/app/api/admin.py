@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
 from app.core.database import get_db
@@ -23,6 +23,14 @@ class UserAdminResponse(BaseModel):
     tier: str = "free"
     is_active: bool
     is_admin: bool
+    phone: Optional[str] = None
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def mask_phone(cls, v):
+        if v and len(v) >= 7:
+            return v[:3] + '****' + v[-4:]
+        return v
 
     class Config:
         from_attributes = True
