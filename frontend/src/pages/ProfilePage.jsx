@@ -113,7 +113,7 @@ function ChangeEmailSection({ user, onUpdated }) {
           value={emailCode}
           onChange={(e) => setEmailCode(e.target.value.slice(0, 6))}
           placeholder="输入 6 位验证码"
-          style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: 4 }}
+          style={{ ...inputStyle, fontFamily: 'monospace' }}
         />
       </div>
 
@@ -186,7 +186,7 @@ function ChangePhoneSection({ user, onUpdated }) {
             value={newPhone}
             onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
             placeholder="输入 11 位手机号"
-            style={{ ...inputStyle, flex: 1, fontFamily: 'monospace' }}
+            style={{ ...inputStyle, flex: 1 }}
           />
           <button
             type="button"
@@ -208,7 +208,7 @@ function ChangePhoneSection({ user, onUpdated }) {
           value={smsCode}
           onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="输入 6 位验证码"
-          style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: 4 }}
+          style={{ ...inputStyle, fontFamily: 'monospace' }}
         />
       </div>
 
