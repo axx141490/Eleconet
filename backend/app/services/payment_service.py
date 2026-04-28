@@ -109,11 +109,24 @@ def make_order_no() -> str:
 
 # ── WeChat Pay ─────────────────────────────────────────────────────────────
 
+_WECHAT_REQUIRED = ("appid", "mchid", "private_key", "cert_serial_no", "apiv3_key", "notify_url")
+
+
+def _wechat_config_valid(wcfg: dict) -> bool:
+    missing = [k for k in _WECHAT_REQUIRED if not wcfg.get(k, "").strip()]
+    if missing:
+        print(f"WeChat pay config incomplete, missing fields: {missing}")
+        return False
+    return True
+
+
 async def wechat_create_native(order_no: str, amount_fen: int, tier: str, duration_months: int) -> Optional[str]:
     """Create WeChat native pay order, return code_url for QR display."""
     config = load_config()
     wcfg = config["wechat"]
     if not wcfg.get("enabled"):
+        return None
+    if not _wechat_config_valid(wcfg):
         return None
 
     try:
@@ -136,6 +149,7 @@ async def wechat_create_native(order_no: str, amount_fen: int, tier: str, durati
         )
         if code == 200 and isinstance(message, dict):
             return message.get("code_url")
+        print(f"WeChat pay non-200 response: code={code}, message={message}")
     except ImportError:
         pass
     except Exception as e:
@@ -148,6 +162,8 @@ async def wechat_query_order(order_no: str) -> Optional[str]:
     config = load_config()
     wcfg = config["wechat"]
     if not wcfg.get("enabled"):
+        return None
+    if not _wechat_config_valid(wcfg):
         return None
     try:
         from wechatpayv3 import WeChatPay, WeChatPayType
@@ -178,6 +194,8 @@ def wechat_verify_callback(headers: dict, body: bytes) -> Optional[Dict]:
     config = load_config()
     wcfg = config["wechat"]
     if not wcfg.get("enabled"):
+        return None
+    if not _wechat_config_valid(wcfg):
         return None
     try:
         from wechatpayv3 import WeChatPay, WeChatPayType
