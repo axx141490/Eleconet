@@ -123,6 +123,7 @@ def _normalize_wechat_private_key(key: str) -> str:
 # ── WeChat Pay ─────────────────────────────────────────────────────────────
 
 _WECHAT_REQUIRED = ("appid", "mchid", "private_key", "cert_serial_no", "apiv3_key", "notify_url")
+_WECHAT_CERT_DIR = "./data/wechatpay_certs"
 
 
 def _wechat_config_valid(wcfg: dict) -> bool:
@@ -131,6 +132,21 @@ def _wechat_config_valid(wcfg: dict) -> bool:
         print(f"WeChat pay config incomplete, missing fields: {missing}")
         return False
     return True
+
+
+def _build_wechat(wcfg: dict):
+    from wechatpayv3 import WeChatPay, WeChatPayType
+    os.makedirs(_WECHAT_CERT_DIR, exist_ok=True)
+    return WeChatPay(
+        wechatpay_type=WeChatPayType.NATIVE,
+        mchid=wcfg["mchid"],
+        private_key=_normalize_wechat_private_key(wcfg["private_key"]),
+        cert_serial_no=wcfg["cert_serial_no"],
+        apiv3_key=wcfg["apiv3_key"],
+        appid=wcfg["appid"],
+        notify_url=wcfg.get("notify_url", ""),
+        cert_dir=_WECHAT_CERT_DIR,
+    )
 
 
 async def wechat_create_native(order_no: str, amount_fen: int, tier: str, duration_months: int) -> Optional[str]:
@@ -143,16 +159,7 @@ async def wechat_create_native(order_no: str, amount_fen: int, tier: str, durati
         return None
 
     try:
-        from wechatpayv3 import WeChatPay, WeChatPayType
-        wx = WeChatPay(
-            wechatpay_type=WeChatPayType.NATIVE,
-            mchid=wcfg["mchid"],
-            private_key=_normalize_wechat_private_key(wcfg["private_key"]),
-            cert_serial_no=wcfg["cert_serial_no"],
-            apiv3_key=wcfg["apiv3_key"],
-            appid=wcfg["appid"],
-            notify_url=wcfg.get("notify_url", ""),
-        )
+        wx = _build_wechat(wcfg)
         label = "Pro" if tier == "pro" else "Enterprise"
         dur = "年" if duration_months == 12 else "月"
         code, message = wx.pay(
@@ -179,16 +186,7 @@ async def wechat_query_order(order_no: str) -> Optional[str]:
     if not _wechat_config_valid(wcfg):
         return None
     try:
-        from wechatpayv3 import WeChatPay, WeChatPayType
-        wx = WeChatPay(
-            wechatpay_type=WeChatPayType.NATIVE,
-            mchid=wcfg["mchid"],
-            private_key=_normalize_wechat_private_key(wcfg["private_key"]),
-            cert_serial_no=wcfg["cert_serial_no"],
-            apiv3_key=wcfg["apiv3_key"],
-            appid=wcfg["appid"],
-            notify_url=wcfg.get("notify_url", ""),
-        )
+        wx = _build_wechat(wcfg)
         code, message = wx.query(out_trade_no=order_no)
         if code == 200 and isinstance(message, dict):
             trade_state = message.get("trade_state", "")
@@ -211,16 +209,7 @@ def wechat_verify_callback(headers: dict, body: bytes) -> Optional[Dict]:
     if not _wechat_config_valid(wcfg):
         return None
     try:
-        from wechatpayv3 import WeChatPay, WeChatPayType
-        wx = WeChatPay(
-            wechatpay_type=WeChatPayType.NATIVE,
-            mchid=wcfg["mchid"],
-            private_key=_normalize_wechat_private_key(wcfg["private_key"]),
-            cert_serial_no=wcfg["cert_serial_no"],
-            apiv3_key=wcfg["apiv3_key"],
-            appid=wcfg["appid"],
-            notify_url=wcfg.get("notify_url", ""),
-        )
+        wx = _build_wechat(wcfg)
         result = wx.callback(headers=headers, body=body)
         if result and result.get("event_type") == "TRANSACTION.SUCCESS":
             return result.get("resource", {})
