@@ -2,10 +2,8 @@
 
 import json
 import os
+import re
 import uuid
-import hashlib
-import hmac
-import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
@@ -110,14 +108,14 @@ def make_order_no() -> str:
 def _normalize_wechat_private_key(key: str) -> str:
     """Normalize WeChat private key to valid PEM regardless of how it was pasted."""
     key = key.strip()
-    # Strip any existing headers and collapse all whitespace from the body
-    body_lines = [l.strip() for l in key.splitlines() if l.strip() and not l.strip().startswith("-----")]
-    body = "".join(body_lines)
-    # Detect PKCS#1 vs PKCS#8 from original headers (default to PKCS#8 used by WeChat tools)
     if "BEGIN RSA PRIVATE KEY" in key:
         header, footer = "-----BEGIN RSA PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----"
     else:
         header, footer = "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----"
+    # Remove all header/footer markers then strip every whitespace character from the body.
+    # This handles keys pasted as a single space-separated line or with mixed line endings.
+    body = re.sub(r"-----[^-]+-----", "", key)
+    body = re.sub(r"\s+", "", body)
     wrapped = "\n".join(body[i:i + 64] for i in range(0, len(body), 64))
     return f"{header}\n{wrapped}\n{footer}"
 
