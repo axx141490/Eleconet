@@ -24,6 +24,8 @@ DEFAULT_CONFIG = {
         "cert_serial_no": "",
         "apiv3_key": "",
         "notify_url": "",
+        "public_key": "",     # 微信支付公钥（新版商户必填）
+        "public_key_id": "",  # 微信支付公钥ID，格式 PUB_KEY_ID_xxxxx
     },
     "alipay": {
         "enabled": False,
@@ -136,8 +138,7 @@ def _wechat_config_valid(wcfg: dict) -> bool:
 
 def _build_wechat(wcfg: dict):
     from wechatpayv3 import WeChatPay, WeChatPayType
-    os.makedirs(_WECHAT_CERT_DIR, exist_ok=True)
-    return WeChatPay(
+    kwargs = dict(
         wechatpay_type=WeChatPayType.NATIVE,
         mchid=wcfg["mchid"],
         private_key=_normalize_wechat_private_key(wcfg["private_key"]),
@@ -145,8 +146,16 @@ def _build_wechat(wcfg: dict):
         apiv3_key=wcfg["apiv3_key"],
         appid=wcfg["appid"],
         notify_url=wcfg.get("notify_url", ""),
-        cert_dir=_WECHAT_CERT_DIR,
     )
+    public_key = wcfg.get("public_key", "").strip()
+    public_key_id = wcfg.get("public_key_id", "").strip()
+    if public_key and public_key_id:
+        kwargs["public_key"] = public_key
+        kwargs["public_key_id"] = public_key_id
+    else:
+        os.makedirs(_WECHAT_CERT_DIR, exist_ok=True)
+        kwargs["cert_dir"] = _WECHAT_CERT_DIR
+    return WeChatPay(**kwargs)
 
 
 async def wechat_create_native(order_no: str, amount_fen: int, tier: str, duration_months: int) -> Optional[str]:
