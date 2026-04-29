@@ -84,6 +84,20 @@ cat apiclient_key.pem
 
 复制完整内容（含 `-----BEGIN PRIVATE KEY-----` 首尾行），待会填入系统。
 
+### 2.4 获取微信支付公钥（新版商户必须）
+
+> **说明：** 2024 年后新注册的商户平台已切换为「微信支付公钥」模式，不再提供传统平台证书。如果你在第五步填完配置后仍下单失败，请检查商户平台是否已切换到公钥模式。
+
+1. 商户后台 → **账户中心 → API 安全 → 微信支付公钥**
+2. 点击「申请/查看微信支付公钥」
+3. 下载公钥文件，内容格式为：
+   ```
+   -----BEGIN PUBLIC KEY-----
+   MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+   -----END PUBLIC KEY-----
+   ```
+4. 记录页面上显示的**公钥 ID**，格式为 `PUB_KEY_ID_0114xxxxxxxxx`
+
 ---
 
 ## 第三步：设置 APIv3 密钥
@@ -152,6 +166,8 @@ Forwarding  https://abc123.ngrok-free.app -> http://localhost:8000
 | 证书序列号 | 第 2.2 步获取的序列号，如 `6F2D8B4A1C9E3D7F...` |
 | APIv3 密钥 | 第三步设置的 32 位字符串 |
 | 回调通知 URL | `https://abc123.ngrok-free.app/api/payment/callback/wechat` |
+| 微信支付公钥 | 第 2.4 步下载的公钥文件完整内容（新版商户必填） |
+| 公钥 ID | 第 2.4 步记录的公钥 ID，如 `PUB_KEY_ID_0114xxxxxx`（新版商户必填） |
 
 勾选：
 - ☑ **启用微信支付**
@@ -227,7 +243,10 @@ asyncio.run(check())
 ## 常见问题
 
 **Q：下单失败，提示"微信支付下单失败，请检查配置"**
-A：检查 AppID、mchid、私钥、证书序列号、APIv3 密钥是否填写正确，私钥必须包含完整的首尾 `-----BEGIN/END PRIVATE KEY-----`。
+A：按以下顺序排查：
+1. 检查 AppID、mchid、私钥、证书序列号、APIv3 密钥是否填写正确
+2. 私钥必须是 `apiclient_key.pem` 的完整内容，包含 `-----BEGIN PRIVATE KEY-----` 首尾行，中间不能混入其他文字
+3. 如后端日志出现 `无可用的平台证书` 或 `RESOURCE_NOT_EXISTS`，说明商户已切换为公钥模式，需在商户后台获取微信支付公钥和公钥 ID 并填入配置（见第 2.4 步）
 
 **Q：扫码后提示"商家参数格式有误，请联系商家解决"**
 A：AppID 与商户号不匹配，确认该 AppID 已在商户后台完成关联绑定。
