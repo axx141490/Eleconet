@@ -107,6 +107,16 @@ def make_order_no() -> str:
     return f"RAG{ts}{uid}"
 
 
+def _normalize_wechat_public_key(key: str) -> str:
+    """Normalize WeChat public key to valid PEM regardless of how it was pasted."""
+    key = key.strip()
+    header, footer = "-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----"
+    body = re.sub(r"-----[^-]+-----", "", key)
+    body = re.sub(r"\s+", "", body)
+    wrapped = "\n".join(body[i:i + 64] for i in range(0, len(body), 64))
+    return f"{header}\n{wrapped}\n{footer}"
+
+
 def _normalize_wechat_private_key(key: str) -> str:
     """Normalize WeChat private key to valid PEM regardless of how it was pasted."""
     key = key.strip()
@@ -150,7 +160,7 @@ def _build_wechat(wcfg: dict):
     public_key = wcfg.get("public_key", "").strip()
     public_key_id = wcfg.get("public_key_id", "").strip()
     if public_key and public_key_id:
-        kwargs["public_key"] = public_key
+        kwargs["public_key"] = _normalize_wechat_public_key(public_key)
         kwargs["public_key_id"] = public_key_id
     else:
         os.makedirs(_WECHAT_CERT_DIR, exist_ok=True)
