@@ -82,6 +82,8 @@ function PaymentConfigSection() {
         {wcField('APIv3 Key', 'apiv3_key', 'password')}
         {wcField('Private Key（PEM 内容）', 'private_key', 'password')}
         {wcField('回调通知 URL', 'notify_url')}
+        {wcField('微信支付公钥（public_key，新版商户必填）', 'public_key', 'password')}
+        {wcField('微信支付公钥 ID（PUB_KEY_ID_xxxxx）', 'public_key_id')}
       </div>
 
       <h4 style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>支付宝</h4>
