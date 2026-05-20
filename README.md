@@ -87,8 +87,22 @@ npm run dev
 
 ```bash
 # 编辑 backend/.env
-docker-compose up --build
+docker compose up --build
 ```
+
+> **容器停止后重新启动**（不重新 build）：
+> ```bash
+> docker compose up -d
+> ```
+> 如需单独启动某个容器（以实际容器名为准）：
+> ```bash
+> # 容器名称参考
+> # rag-knowledge-base-frontend-1
+> # rag-knowledge-base-backend-1
+> # rag-knowledge-base-nginx-1
+> # rag-knowledge-base-certbot-1
+> docker compose start frontend backend nginx certbot
+> ```
 
 > **开发提示**：若未改动 `Dockerfile` 或 `requirements.txt`，无需重新 build，直接重启即可：
 > ```bash
